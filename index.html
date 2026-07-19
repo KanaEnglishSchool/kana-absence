@@ -1,2864 +1,708 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KANA Daily Log</title>
-    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>欠席連絡 - KANA English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F7F6F3;
+      --card: #FFFFFF;
+      --primary: #3B7A57;
+      --primary-light: #E8F0EB;
+      --primary-dark: #2D5E43;
+      --text: #2C2C2C;
+      --text-light: #6B6B6B;
+      --border: #E0DED8;
+      --error: #C0392B;
+      --error-bg: #FDEDEB;
+      --success: #27AE60;
+      --success-bg: #E8F8F0;
+      --shadow: 0 2px 12px rgba(0,0,0,0.06);
+      --radius: 14px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 40px 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 24px 20px 28px;
+      text-align: center;
+      position: relative;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 0; right: 0;
+      height: 24px;
+      background: var(--bg);
+      border-radius: 16px 16px 0 0;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+    .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+    .form-container {
+      max-width: 420px;
+      margin: 8px auto 0;
+      padding: 0 16px;
+    }
+
+    .field {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .field-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .field-label .icon { font-size: 16px; }
+    .field-label .required {
+      font-size: 10px;
+      background: var(--error);
+      color: white;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    select, input[type="date"], textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 16px;
+      color: var(--text);
+      background: white;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color 0.2s;
+    }
+    select:focus, input[type="date"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6B6B' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    select.placeholder { color: var(--text-light); }
+    textarea { resize: none; height: 70px; }
+
+    .auto-filled {
+      background: var(--primary-light);
+      border: 2px solid var(--primary-light);
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      text-align: center;
+    }
+    .info-text {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .info-banner {
+      background: var(--primary-light);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--primary-dark);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .student-card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 8px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .student-card:active, .student-card.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .student-card .sc-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .student-card .sc-info { flex: 1; }
+    .student-card .sc-name { font-weight: 700; font-size: 15px; }
+    .student-card .sc-class { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+    .student-card .sc-arrow { color: var(--text-light); font-size: 20px; }
+
+    .date-card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .date-card:active, .date-card.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .date-card .dc-date { font-weight: 700; font-size: 15px; }
+    .date-card .dc-distance { font-size: 11px; color: var(--text-light); }
+
+    .confirm-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--primary);
+    }
+    .confirm-card h3 {
+      font-size: 15px;
+      color: var(--primary-dark);
+      margin-bottom: 14px;
+    }
+    .confirm-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .confirm-row:last-of-type { border-bottom: none; }
+    .confirm-row .label { color: var(--text-light); }
+    .confirm-row .value { font-weight: 500; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: white;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(59,122,87,0.25);
+      margin-top: 4px;
+    }
+    .submit-btn:active { transform: scale(0.98); }
+    .submit-btn:disabled {
+      background: var(--border);
+      color: var(--text-light);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+    .back-btn {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: white;
+      color: var(--text);
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .status-message {
+      text-align: center;
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .status-error { background: var(--error-bg); color: var(--error); }
+
+    .success-screen { text-align: center; padding: 40px 20px; }
+    .success-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: var(--success-bg);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+    }
+    .success-screen h2 { font-size: 20px; margin-bottom: 8px; }
+    .success-screen p { color: var(--text-light); font-size: 14px; line-height: 1.6; }
+    .close-btn {
+      width: 100%; padding: 16px; border: none;
+      border-radius: var(--radius);
+      background: var(--primary); color: white;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; margin-top: 28px;
+      box-shadow: 0 4px 16px rgba(59,122,87,0.25);
+    }
+    .close-message { margin-top: 12px; font-size: 13px; color: var(--text-light); }
+    .close-message.hidden { display: none; }
+
+    .loading-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(247,246,243,0.92);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay p { margin-top: 16px; font-size: 14px; color: var(--text-light); }
+    .hidden { display: none !important; }
+    .empty-state {
+      text-align: center;
+      padding: 30px 20px;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel" data-presets="react">
 
-const { useState, useEffect, useCallback } = React;
-
-// ── Supabase config ───────────────────────────────────────────────────────────
-const SUPABASE_URL = "https://lyvgdejxhyjlhultbllg.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5dmdkZWp4aHlqbGh1bHRibGxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNTkxODEsImV4cCI6MjA5NDczNTE4MX0.RqLEB9WqnDUm27VgFfkoTxp-LNT-C36xeVqH1dAAu8I";
-
-const headers = {
-  "apikey": SUPABASE_KEY,
-  "Authorization": `Bearer ${SUPABASE_KEY}`,
-  "Content-Type": "application/json",
-  "Prefer": "return=minimal",
-};
-
-async function sbGet(table, match = "") {
-  const url = `${SUPABASE_URL}/rest/v1/${table}${match}`;
-  const res = await fetch(url, { headers: { ...headers } });
-  if (!res.ok) throw new Error(`GET ${table} failed: ${res.status}`);
-  return res.json();
-}
-
-async function sbUpsert(table, body) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-    method: "POST",
-    headers: { ...headers, "Prefer": "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`UPSERT ${table} failed: ${res.status} ${text}`);
-  }
-}
-
-async function loadTemplates() {
-  const rows = await sbGet("week_templates", "?id=eq.main");
-  if (rows && rows.length > 0 && rows[0].data && Object.keys(rows[0].data).length > 0) {
-    return rows[0].data;
-  }
-  return null;
-}
-
-async function saveTemplates(templates) {
-  await sbUpsert("week_templates", { id: "main", data: templates, updated_at: new Date().toISOString() });
-}
-
-async function loadReportsForDate(date) {
-  const rows = await sbGet("reports", `?id=like.${date}_*`);
-  const map = {};
-  (rows || []).forEach(r => {
-    const slotId = r.id.replace(`${date}_`, "");
-    map[slotId] = r.data;
-  });
-  return map;
-}
-
-async function saveReport(date, slotId, report) {
-  const id = `${date}_${slotId}`;
-  await sbUpsert("reports", { id, data: report, saved_at: new Date().toISOString() });
-}
-
-// ── Student records (test scores + Eiken + CS data) ───────────────────────────
-async function loadStudentRecord(studentName) {
-  try {
-    const rows = await sbGet("student_records", `?id=eq.${encodeURIComponent(studentName)}`);
-    if (rows && rows.length > 0) return rows[0].data;
-  } catch {}
-  return { testScores: [], eikenHistory: [], parentComments: [], referrals: [], onboarding: null };
-}
-
-async function saveStudentRecord(studentName, data) {
-  await sbUpsert("student_records", {
-    id: studentName,
-    data,
-    updated_at: new Date().toISOString(),
-  });
-}
-
-async function loadReportsInRange(fromDate, toDate) {
-  const rows = await sbGet("reports", `?id=gte.${fromDate}&id=lte.${toDate}_zzz&order=id.asc`);
-  return rows || [];
-}
-
-async function loadAllReportsEver() {
-  const rows = await sbGet("reports", `?order=id.asc`);
-  return rows || [];
-}
-
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const C = {
-  bg:           "#F8F6F1",
-  surface:      "#FFFFFF",
-  border:       "#E2DDD5",
-  borderBright: "#C8C0B4",
-  forest:       "#1E3A2F",
-  forestMid:    "#2D5A45",
-  amber:        "#C27B0A",
-  amberBg:      "#FEF3C7",
-  green:        "#0D7A47",
-  greenBg:      "#D1FAE5",
-  greenDim:     "#CCEEDD",
-  coral:        "#C0392B",
-  coralBg:      "#FFE4E2",
-  purple:       "#5B21B6",
-  purpleBg:     "#EDE9FE",
-  blue:         "#2563EB",
-  blueBg:       "#DBEAFE",
-  text:         "#1A2730",
-  textMid:      "#374151",
-  textDim:      "#6B7280",
-  muted:        "#9CA3AF",
-  white:        "#FFFFFF",
-};
-
-const SERIF = "'Playfair Display', Georgia, serif";
-const MONO  = "'DM Mono', 'Courier New', monospace";
-const BODY  = "'Outfit', system-ui, sans-serif";
-
-const MOODS       = ["😄 Excellent","🙂 Good","😐 Neutral","😕 Low","😤 Difficult"];
-const ENGAGEMENT  = ["🔥 Highly engaged","✅ Engaged","😐 Mixed","😴 Low engagement","📵 Disengaged"];
-const PERFORMANCE = ["⭐ Exceeded goals","✅ Met goals","〜 Partially met","❌ Below goals","🚫 No lesson goals set"];
-
-const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const WEEKDAY_TIMES  = ["13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"];
-const SATURDAY_TIMES = ["09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00"];
-const DUAL_DAYS      = ["Monday","Tuesday","Thursday","Saturday"];
-
-// ── IMPORTANT: CLASS_TYPES must be defined BEFORE migrateTemplates ────────────
-const CLASS_TYPES = ["Kids Class", "KPT", "Mini Kids / Playgroup B", "EWS", "Other"];
-
-const slotTimesFor = (d) => d === "Saturday" ? SATURDAY_TIMES : WEEKDAY_TIMES;
-const isDualDay    = (d) => DUAL_DAYS.includes(d);
-
-const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: ${C.bg}; font-family: ${BODY}; color: ${C.text}; line-height: 1.5; }
-  input, textarea, select, button { font-family: ${BODY}; }
-  textarea { resize: vertical; }
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: ${C.border}; }
-  ::-webkit-scrollbar-thumb { background: ${C.borderBright}; border-radius: 3px; }
-  @keyframes slideUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-  @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
-  @keyframes spin    { to { transform: rotate(360deg); } }
-  @keyframes pulse   { 0%,100% { opacity:1; } 50% { opacity:.4; } }
-  .slide-up { animation: slideUp .22s ease forwards; }
-  .fade-in  { animation: fadeIn .15s ease forwards; }
-  .spin     { animation: spin .8s linear infinite; }
-  select option { background: ${C.surface}; color: ${C.text}; }
-`;
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const todayStr = () => new Date().toISOString().slice(0, 10);
-const dowOf    = (d) => new Date(d + "T12:00:00").getDay();
-const dayName  = (d) => DAYS[dowOf(d)];
-const fmtDay   = (d) => new Date(d + "T12:00:00").toLocaleDateString("en-GB", {
-  weekday:"long", day:"numeric", month:"long", year:"numeric"
-});
-const addDays  = (d, n) => {
-  const dt = new Date(d + "T12:00:00"); dt.setDate(dt.getDate() + n);
-  return dt.toISOString().slice(0, 10);
-};
-
-const buildTemplate = (day) => {
-  const times = slotTimesFor(day);
-  if (isDualDay(day)) {
-    return times.flatMap((time, i) => [
-      { id: `slot_${i}_a`, time, room: "Room A", className: "", studentNames: [], classType: CLASS_TYPES[0], level: "" },
-      { id: `slot_${i}_b`, time, room: "Room B", className: "", studentNames: [], classType: CLASS_TYPES[0], level: "" },
-    ]);
-  }
-  return times.map((time, i) => ({ id: `slot_${i}`, time, room: null, className: "", studentNames: [], classType: CLASS_TYPES[0], level: "" }));
-};
-
-const buildWeekTemplates = () =>
-  Object.fromEntries(DAYS.map(d => [d, buildTemplate(d)]));
-
-// CLASS_TYPES is now defined above so this is safe
-function migrateTemplates(raw) {
-  const wt = raw || {};
-  DAYS.forEach(d => {
-    const expected = buildTemplate(d);
-    if (!wt[d] || wt[d].length !== expected.length) {
-      wt[d] = expected;
-    } else {
-      wt[d] = wt[d].map((slot, i) => ({
-        ...slot,
-        time:      expected[i]?.time || slot.time,
-        room:      expected[i]?.room !== undefined ? expected[i].room : slot.room,
-        id:        expected[i]?.id   || slot.id,
-        classType: slot.classType || CLASS_TYPES[0],
-        level:     slot.level     || "",
-      }));
-    }
-  });
-  return wt;
-}
-
-// ── Current time helpers ──────────────────────────────────────────────────────
-const nowHHMM = () => {
-  const n = new Date();
-  return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`;
-};
-
-function getCurrentSlots(slots) {
-  if (!slots || !slots.length) return [];
-  const now = nowHHMM();
-  const times = [...new Set(slots.map(s => s.time))].sort();
-  let activeTime = null;
-  for (let i = 0; i < times.length; i++) {
-    const start = times[i];
-    const end   = times[i + 1] || "23:59";
-    if (now >= start && now < end) { activeTime = start; break; }
-  }
-  if (!activeTime) return [];
-  return slots.filter(s => s.time === activeTime && s.className);
-}
-
-// ── Primitive UI ──────────────────────────────────────────────────────────────
-const Btn = ({ children, onClick, variant = "primary", small, disabled, full, style: s = {} }) => {
-  const variants = {
-    primary: { bg: C.forest,      col: C.white,   bdr: "none" },
-    ghost:   { bg: "transparent", col: C.text,    bdr: `1.5px solid ${C.border}` },
-    danger:  { bg: C.coralBg,     col: C.coral,   bdr: `1.5px solid ${C.coral}` },
-    green:   { bg: C.greenBg,     col: C.green,   bdr: `1.5px solid ${C.green}` },
-    purple:  { bg: C.purpleBg,    col: C.purple,  bdr: `1.5px solid ${C.purple}` },
-    amber:   { bg: C.amberBg,     col: C.amber,   bdr: `1.5px solid ${C.amber}` },
-    dim:     { bg: C.bg,          col: C.textDim, bdr: `1.5px solid ${C.border}` },
-  }[variant] || {};
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      background: variants.bg, color: variants.col, border: variants.bdr,
-      borderRadius: 8, padding: small ? "5px 12px" : "9px 18px",
-      fontSize: small ? 12 : 14, fontWeight: 600, letterSpacing: .2,
-      opacity: disabled ? .4 : 1, cursor: disabled ? "not-allowed" : "pointer",
-      width: full ? "100%" : undefined, transition: "opacity .15s", ...s,
-    }}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.opacity = ".82"; }}
-      onMouseLeave={e => { e.currentTarget.style.opacity = disabled ? ".4" : "1"; }}
-    >{children}</button>
-  );
-};
-
-const FieldLabel = ({ children, hint }) => (
-  <div style={{ marginBottom: 6 }}>
-    <span style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: .8 }}>{children}</span>
-    {hint && <span style={{ fontSize: 11, color: C.muted, marginLeft: 6 }}>— {hint}</span>}
+  <div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>読み込み中...</p>
   </div>
-);
 
-const LightSelect = ({ label, hint, value, onChange, options }) => (
-  <div>
-    {label && <FieldLabel hint={hint}>{label}</FieldLabel>}
-    <select value={value} onChange={e => onChange(e.target.value)} style={{
-      width: "100%", background: C.surface, border: `1.5px solid ${C.border}`,
-      borderRadius: 8, padding: "9px 12px", fontSize: 14, color: C.text, outline: "none", cursor: "pointer",
-    }}
-      onFocus={e => e.target.style.borderColor = C.forest}
-      onBlur={e => e.target.style.borderColor = C.border}>
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
-    </select>
+  <div class="header">
+    <h1>🏫 欠席連絡</h1>
+    <p>KANA English</p>
   </div>
-);
 
-const LightInput = ({ label, value, onChange, placeholder, type = "text" }) => (
-  <div>
-    {label && <FieldLabel>{label}</FieldLabel>}
-    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={{ width: "100%", background: C.surface, border: `1.5px solid ${C.border}`,
-        borderRadius: 8, padding: "9px 12px", fontSize: 14, color: C.text, outline: "none" }}
-      onFocus={e => e.target.style.borderColor = C.forest}
-      onBlur={e => e.target.style.borderColor = C.border} />
+  <!-- ══════════ STUDENT PICKER SCREEN ══════════ -->
+  <div id="studentScreen" class="form-container hidden">
+    <div class="field">
+      <div class="field-label"><span class="icon">👤</span>生徒を選択<span class="required">必須</span></div>
+      <div id="studentList"></div>
+    </div>
   </div>
-);
 
-function SyncBadge({ status }) {
-  const cfg = {
-    saving:  { col: C.amber, label: "Saving…" },
-    saved:   { col: C.green, label: "✓ Saved" },
-    error:   { col: C.coral, label: "⚠ Save failed" },
-    loading: { col: C.muted, label: "Loading…" },
-  }[status] || {};
-  return (
-    <span style={{ fontFamily: MONO, fontSize: 11, color: cfg.col, fontWeight: 600, letterSpacing: .5 }}>
-      {cfg.label}
-    </span>
-  );
-}
+  <!-- ══════════ FORM SCREEN ══════════ -->
+  <div id="formScreen" class="form-container hidden">
 
-// ── Student Mark ──────────────────────────────────────────────────────────────
-function StudentMark({ name, mark, onChange }) {
-  const cfg = {
-    positive: { bg: C.greenBg,       col: C.green,   border: C.green   },
-    negative: { bg: C.coralBg,       col: C.coral,   border: C.coral   },
-    flag:     { bg: C.amberBg,       col: C.amber,   border: C.amber   },
-    absent:   { bg: "#F3F4F6",       col: "#6B7280", border: "#9CA3AF" },
-    none:     { bg: "transparent",   col: C.muted,   border: C.border  },
-  };
-  const toggle  = (type) => onChange(mark === type ? "none" : type);
-  const active  = cfg[mark] || cfg.none;
-  const isAbsent = mark === "absent";
+    <div class="info-banner" id="studentInfoBanner"></div>
 
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "8px 12px", borderRadius: 9,
-      background: isAbsent ? "#F9FAFB" : C.bg,
-      border: `1.5px solid ${mark !== "none" ? active.border : C.border}`,
-      opacity: isAbsent ? .65 : 1,
-      transition: "border-color .15s, opacity .15s",
-    }}>
-      <span style={{
-        fontSize: 14, fontWeight: 600,
-        color: mark !== "none" ? active.col : C.text,
-        textDecoration: isAbsent ? "line-through" : "none",
-      }}>{name}</span>
-      <div style={{ display: "flex", gap: 5 }}>
-        {[
-          { type: "positive", icon: "✓",  title: "Positive" },
-          { type: "negative", icon: "✗",  title: "Concern"  },
-          { type: "flag",     icon: "🚩", title: "Flag"     },
-          { type: "absent",   icon: "○",  title: "Absent"   },
-        ].map(({ type, icon, title }) => {
-          const isActive = mark === type;
-          const mc = cfg[type];
-          return (
-            <button key={type} title={title} onClick={() => toggle(type)} style={{
-              width: 32, height: 32, borderRadius: 7,
-              fontSize: type === "absent" ? 16 : 14, fontWeight: 700,
-              border: `1.5px solid ${isActive ? mc.border : C.border}`,
-              background: isActive ? mc.bg : C.surface,
-              color: isActive ? mc.col : C.muted, cursor: "pointer", transition: "all .12s",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = mc.border; e.currentTarget.style.color = mc.col; }}}
-              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = C.border;  e.currentTarget.style.color = C.muted; }}}
-            >{icon}</button>
-          );
-        })}
+    <div class="field" id="fieldDate">
+      <div class="field-label">
+        <span class="icon">📅</span>欠席日<span class="required">必須</span>
       </div>
+      <div id="dateList"></div>
+      <div class="info-text" id="dateInfoText"></div>
     </div>
-  );
-}
 
-// ── Report Modal ──────────────────────────────────────────────────────────────
-function ReportModal({ slot, existing, onSave, onClose }) {
-  const [mood,        setMood]        = useState(existing?.mood        || MOODS[1]);
-  const [engagement,  setEngagement]  = useState(existing?.engagement  || ENGAGEMENT[1]);
-  const [performance, setPerformance] = useState(existing?.performance || PERFORMANCE[1]);
-  const [note,        setNote]        = useState(existing?.note        || "");
-  const [marks,       setMarks]       = useState(existing?.marks       || {});
-  const [feedbackSent, setFeedbackSent] = useState(existing?.feedbackSent || false);
-  const [saving,      setSaving]      = useState(false);
-
-  const setMark = (name, m) => setMarks(prev => ({ ...prev, [name]: m }));
-  const getMark = (name)    => marks[name] || "none";
-
-  const counts = {
-    pos: slot.studentNames.filter(n => getMark(n) === "positive").length,
-    neg: slot.studentNames.filter(n => getMark(n) === "negative").length,
-    fl:  slot.studentNames.filter(n => getMark(n) === "flag").length,
-    abs: slot.studentNames.filter(n => getMark(n) === "absent").length,
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    await onSave({ mood, engagement, performance, note, marks, feedbackSent, savedAt: new Date().toISOString() });
-    setSaving(false);
-    onClose();
-  };
-
-  return (
-    <div className="fade-in" style={{
-      position:"fixed", inset:0, background:"rgba(30,58,47,.45)",
-      display:"flex", alignItems:"center", justifyContent:"center",
-      zIndex:1000, padding:16, overflowY:"auto",
-    }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="slide-up" style={{
-        background:C.surface, border:`1.5px solid ${C.border}`,
-        borderRadius:16, width:"100%", maxWidth:520,
-        maxHeight:"92vh", overflowY:"auto", padding:26,
-        boxShadow:"0 20px 60px rgba(0,0,0,.15)",
-      }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
-          <div>
-            <p style={{ fontFamily:MONO, fontSize:11, color:C.amber, letterSpacing:2, marginBottom:4, fontWeight:600 }}>{slot.time}</p>
-            <h2 style={{ fontFamily:SERIF, fontSize:22, color:C.forest }}>{slot.className || "Unnamed Class"}</h2>
-            <p style={{ fontSize:13, color:C.textDim, marginTop:3 }}>{slot.studentNames.length} student{slot.studentNames.length !== 1 ? "s" : ""}</p>
-          </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:C.muted, fontSize:24, cursor:"pointer", padding:4, lineHeight:1 }}>×</button>
-        </div>
-
-        <div style={{ background:C.bg, borderRadius:12, padding:16, marginBottom:20, display:"grid", gap:14, border:`1px solid ${C.border}` }}>
-          <p style={{ fontFamily:MONO, fontSize:10, color:C.amber, letterSpacing:2, textTransform:"uppercase", fontWeight:600 }}>Class Rating</p>
-          <LightSelect label="1. General class mood / attitude"  value={mood}        onChange={setMood}        options={MOODS}       />
-          <LightSelect label="2. How engaged were the students?" value={engagement}  onChange={setEngagement}  options={ENGAGEMENT}  />
-          <LightSelect label="3. Performance vs lesson goals"    value={performance} onChange={setPerformance} options={PERFORMANCE} />
-        </div>
-
-        {slot.studentNames.length > 0 && (
-          <div style={{ marginBottom:20 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-              <FieldLabel>Student marks</FieldLabel>
-              <div style={{ display:"flex", gap:10, fontSize:12 }}>
-                {counts.pos > 0 && <span style={{ color:C.green, fontWeight:700 }}>✓ {counts.pos}</span>}
-                {counts.neg > 0 && <span style={{ color:C.coral, fontWeight:700 }}>✗ {counts.neg}</span>}
-                {counts.fl  > 0 && <span style={{ color:C.amber, fontWeight:700 }}>🚩 {counts.fl}</span>}
-                {counts.abs > 0 && <span style={{ color:C.muted, fontWeight:700 }}>○ {counts.abs} absent</span>}
-              </div>
-            </div>
-            <p style={{ fontSize:12, color:C.muted, marginBottom:10 }}>Only mark students worth noting. Unmarked = fine.</p>
-            <div style={{ display:"grid", gap:6 }}>
-              {slot.studentNames.map(name => (
-                <StudentMark key={name} name={name} mark={getMark(name)} onChange={m => setMark(name, m)} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div style={{ marginBottom:14 }}>
-          <FieldLabel hint="optional">Teacher note</FieldLabel>
-          <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
-            placeholder="Anything else worth recording..."
-            style={{ width:"100%", background:C.bg, border:`1.5px solid ${C.border}`, borderRadius:8,
-              padding:"9px 12px", fontSize:13, color:C.text, outline:"none", lineHeight:1.6 }}
-            onFocus={e => e.target.style.borderColor = C.forest}
-            onBlur={e => e.target.style.borderColor = C.border} />
-        </div>
-
-        <label style={{
-          display:"flex", alignItems:"center", gap:10, cursor:"pointer",
-          padding:"11px 14px", borderRadius:9, marginBottom:20,
-          background: feedbackSent ? C.greenBg : C.bg,
-          border:`1.5px solid ${feedbackSent ? C.green : C.border}`,
-          transition:"all .15s",
-        }}>
-          <input type="checkbox" checked={feedbackSent}
-            onChange={e => setFeedbackSent(e.target.checked)}
-            style={{ width:17, height:17, accentColor:C.green, cursor:"pointer" }} />
-          <div>
-            <span style={{ fontSize:13, fontWeight:700, color: feedbackSent ? C.green : C.textMid }}>
-              ✉ Feedback sent to parents
-            </span>
-            <p style={{ fontSize:11, color:C.muted, marginTop:1 }}>
-              Check when the positive marks / notes were relayed (Output Relay)
-            </p>
-          </div>
-        </label>
-
-        <div style={{ display:"flex", gap:10, justifyContent:"flex-end", alignItems:"center" }}>
-          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn variant="primary" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving…" : "Save Report"}
-          </Btn>
-        </div>
+    <div class="field" id="fieldTime">
+      <div class="field-label">
+        <span class="icon">🕐</span>クラス時間
       </div>
+      <div class="auto-filled" id="autoTime">-</div>
+      <div class="info-text">通常クラスの時間が自動入力されます</div>
     </div>
-  );
-}
 
-// ── Slot Editor ───────────────────────────────────────────────────────────────
-function SlotEditorModal({ slot, slotDayName, onSave, onClose }) {
-  const [className,   setClassName]   = useState(slot.className || "");
-  const [studentText, setStudentText] = useState((slot.studentNames || []).join("\n"));
-  const [classType,   setClassType]   = useState(slot.classType || CLASS_TYPES[0]);
-  const [level,       setLevel]       = useState(slot.level || "");
-  const [saving,      setSaving]      = useState(false);
-
-  const save = async () => {
-    setSaving(true);
-    const names = studentText.split("\n").map(s => s.trim()).filter(Boolean);
-    await onSave({ className, studentNames: names, classType, level });
-    setSaving(false);
-    onClose();
-  };
-
-  return (
-    <div className="fade-in" style={{
-      position:"fixed", inset:0, background:"rgba(30,58,47,.45)",
-      display:"flex", alignItems:"center", justifyContent:"center",
-      zIndex:1002, padding:16,
-    }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="slide-up" style={{
-        background:C.surface, border:`1.5px solid ${C.border}`,
-        borderRadius:16, width:"100%", maxWidth:400, padding:26,
-        boxShadow:"0 20px 60px rgba(0,0,0,.15)",
-      }}>
-        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:18 }}>
-          <div>
-            <p style={{ fontFamily:MONO, fontSize:10, color:C.purple, letterSpacing:2, marginBottom:4, fontWeight:600 }}>
-              {slotDayName} · {slot.time}
-            </p>
-            <h3 style={{ fontFamily:SERIF, fontSize:20, color:C.forest }}>Edit Slot</h3>
-          </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:C.muted, fontSize:22, cursor:"pointer" }}>×</button>
-        </div>
-        <div style={{ display:"grid", gap:16 }}>
-          <LightInput label="Class name" value={className} onChange={setClassName} placeholder="e.g. Kids Tuesday 4pm" />
-          <div>
-            <FieldLabel>Class type</FieldLabel>
-            <select value={classType} onChange={e => setClassType(e.target.value)} style={{
-              width:"100%", background:C.surface, border:`1.5px solid ${C.border}`,
-              borderRadius:8, padding:"9px 12px", fontSize:14, color:C.text, outline:"none" }}
-              onFocus={e => e.target.style.borderColor = C.forest}
-              onBlur={e => e.target.style.borderColor = C.border}>
-              {CLASS_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <LightInput label="Level / group" value={level} onChange={setLevel} placeholder="e.g. Starter, Pre-Int, Advanced" />
-          <div>
-            <FieldLabel hint="one name per line">Student names</FieldLabel>
-            <textarea value={studentText} onChange={e => setStudentText(e.target.value)}
-              placeholder={"Yuki\nHaruto\nAika\nKenta"} rows={9}
-              style={{ width:"100%", background:C.bg, border:`1.5px solid ${C.border}`,
-                borderRadius:8, padding:"9px 12px", fontSize:14, color:C.text,
-                outline:"none", lineHeight:1.8, fontFamily:MONO }}
-              onFocus={e => e.target.style.borderColor = C.purple}
-              onBlur={e => e.target.style.borderColor = C.border} />
-          </div>
-          <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
-            <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-            <Btn variant="primary" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Btn>
-          </div>
-        </div>
+    <div class="field">
+      <div class="field-label">
+        <span class="icon">📝</span>理由
       </div>
+      <select id="reason" class="placeholder" onchange="handleReasonChange(this)">
+        <option value="" selected>選択してください（任意）</option>
+        <option value="体調不良">体調不良</option>
+        <option value="家庭の事情">家庭の事情</option>
+        <option value="学校行事">学校行事</option>
+        <option value="習い事">習い事</option>
+        <option value="other">その他（自由記入）</option>
+      </select>
+      <textarea id="reasonText" class="hidden" placeholder="理由を入力してください"></textarea>
     </div>
-  );
-}
 
-// ── Template Builder ──────────────────────────────────────────────────────────
-function TemplateBuilder({ weekTemplates, onSave, onClose }) {
-  const [templates,   setTemplates]   = useState(JSON.parse(JSON.stringify(weekTemplates)));
-  const [activeDay,   setActiveDay]   = useState("Monday");
-  const [editingSlot, setEditingSlot] = useState(null);
-  const [saving,      setSaving]      = useState(false);
+    <button class="submit-btn" onclick="showConfirmation()">確認画面へ</button>
+    <button class="back-btn" onclick="backToStudentPicker()">生徒を変更</button>
+  </div>
 
-  const updateSlot = (day, slotId, updates) => {
-    setTemplates(prev => ({
-      ...prev,
-      [day]: prev[day].map(s => s.id === slotId ? { ...s, ...updates } : s),
-    }));
-  };
-
-  const slots = templates[activeDay] || [];
-  const isSaturday = activeDay === "Saturday";
-
-  const handleSave = async () => {
-    setSaving(true);
-    await onSave(templates);
-    setSaving(false);
-    onClose();
-  };
-
-  return (
-    <div className="fade-in" style={{
-      position:"fixed", inset:0, background:"rgba(30,58,47,.5)",
-      display:"flex", alignItems:"center", justifyContent:"center",
-      zIndex:1001, padding:16, overflowY:"auto",
-    }}>
-      {editingSlot && (
-        <SlotEditorModal
-          slot={editingSlot.slot}
-          slotDayName={editingSlot.day}
-          onSave={async (updates) => { updateSlot(editingSlot.day, editingSlot.slot.id, updates); setEditingSlot(null); }}
-          onClose={() => setEditingSlot(null)}
-        />
-      )}
-      <div className="slide-up" style={{
-        background:C.surface, border:`1.5px solid ${C.border}`,
-        borderRadius:18, width:"100%", maxWidth:680,
-        maxHeight:"94vh", overflowY:"auto", padding:28,
-        boxShadow:"0 24px 80px rgba(0,0,0,.18)",
-      }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:22 }}>
-          <div>
-            <p style={{ fontFamily:MONO, fontSize:10, color:C.purple, letterSpacing:2, marginBottom:4, fontWeight:600 }}>WEEKLY SCHEDULE</p>
-            <h2 style={{ fontFamily:SERIF, fontSize:26, color:C.forest }}>Template Builder</h2>
-            <p style={{ fontSize:13, color:C.textDim, marginTop:5 }}>Set up each day once — syncs across all devices.</p>
-            {isSaturday && <p style={{ fontSize:12, color:C.amber, marginTop:6, fontWeight:600 }}>⏰ Saturday runs 09:00–16:00</p>}
-            {isDualDay(activeDay) && <p style={{ fontSize:12, color:C.purple, marginTop:4, fontWeight:600 }}>🏫 2 classrooms — Room A &amp; Room B per hour</p>}
-          </div>
-          <button onClick={onClose} style={{ background:"none", border:"none", color:C.muted, fontSize:24, cursor:"pointer", padding:4 }}>×</button>
-        </div>
-
-        <div style={{ display:"flex", gap:6, marginBottom:22, flexWrap:"wrap" }}>
-          {DAYS.map(d => {
-            const filled   = (templates[d] || []).filter(s => s.className).length;
-            const isActive = activeDay === d;
-            const isSat    = d === "Saturday";
-            return (
-              <button key={d} onClick={() => setActiveDay(d)} style={{
-                padding:"6px 14px", borderRadius:8,
-                border:`1.5px solid ${isActive ? C.purple : C.border}`,
-                background: isActive ? C.purpleBg : C.bg,
-                color: isActive ? C.purple : C.textDim,
-                fontSize:13, fontWeight:700, cursor:"pointer", transition:"all .15s", position:"relative",
-              }}>
-                {d.slice(0,3)}
-                {isSat && !isActive && <span style={{ fontSize:9, color:C.amber, display:"block", lineHeight:1 }}>9–17</span>}
-                {filled > 0 && (
-                  <span style={{
-                    position:"absolute", top:-7, right:-7, background:C.purple, color:C.white,
-                    width:17, height:17, borderRadius:"50%", fontSize:9,
-                    display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800,
-                  }}>{filled}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        <div style={{ display:"grid", gap:8 }}>
-          {slots.map(slot => {
-            const hasClass = !!slot.className;
-            return (
-              <div key={slot.id} style={{
-                display:"flex", alignItems:"center", gap:12, padding:"11px 14px",
-                background: hasClass ? C.bg : C.surface, borderRadius:10,
-                border:`1.5px solid ${hasClass ? C.borderBright : C.border}`,
-                borderLeft:`4px solid ${hasClass ? C.purple : C.border}`,
-              }}>
-                <span style={{ fontFamily:MONO, fontSize:12, color:C.amber, minWidth:70, fontWeight:600 }}>
-                  {slot.time}
-                  {slot.room && (
-                    <span style={{ display:"block", fontSize:10, fontWeight:700, letterSpacing:.3,
-                      color: slot.room === "Room A" ? C.purple : C.forest }}>
-                      {slot.room}
-                    </span>
-                  )}
-                </span>
-                <div style={{ flex:1 }}>
-                  {hasClass ? (
-                    <>
-                      <p style={{ fontWeight:700, fontSize:14, color:C.forest }}>{slot.className}</p>
-                      <p style={{ fontSize:12, color:C.textDim, marginTop:2 }}>
-                        {slot.studentNames.length} student{slot.studentNames.length !== 1 ? "s" : ""}
-                        {slot.studentNames.length > 0 && (
-                          <span style={{ color:C.muted }}>
-                            {" "}· {slot.studentNames.slice(0,3).join(", ")}
-                            {slot.studentNames.length > 3 ? ` +${slot.studentNames.length - 3}` : ""}
-                          </span>
-                        )}
-                      </p>
-                    </>
-                  ) : (
-                    <p style={{ fontSize:13, color:C.muted, fontStyle:"italic" }}>No class</p>
-                  )}
-                </div>
-                <div style={{ display:"flex", gap:6 }}>
-                  <Btn variant={hasClass ? "dim" : "purple"} small onClick={() => setEditingSlot({ slot, day:activeDay })}>
-                    {hasClass ? "Edit" : "+ Add"}
-                  </Btn>
-                  {hasClass && (
-                    <Btn variant="danger" small onClick={() => updateSlot(activeDay, slot.id, { className:"", studentNames:[] })}>
-                      Clear
-                    </Btn>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:24 }}>
-          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-          <Btn variant="purple" onClick={handleSave} disabled={saving}>
-            {saving ? "Saving to cloud…" : "Save Weekly Schedule"}
-          </Btn>
-        </div>
-      </div>
+  <!-- ══════════ CONFIRM SCREEN ══════════ -->
+  <div id="confirmScreen" class="form-container hidden">
+    <div class="confirm-card">
+      <h3>📋 以下の内容で送信します</h3>
+      <div class="confirm-row"><span class="label">生徒名</span><span class="value" id="confirmStudent"></span></div>
+      <div class="confirm-row"><span class="label">欠席日</span><span class="value" id="confirmDate"></span></div>
+      <div class="confirm-row"><span class="label">クラス時間</span><span class="value" id="confirmTime"></span></div>
+      <div class="confirm-row"><span class="label">理由</span><span class="value" id="confirmReason"></span></div>
     </div>
-  );
-}
+    <button class="submit-btn" id="sendBtn" onclick="submitAbsence()">この内容で送信する</button>
+    <button class="back-btn" onclick="backToForm()">修正する</button>
+  </div>
 
-// ── Slot Card ─────────────────────────────────────────────────────────────────
-function SlotCard({ slot, report, onLog, onEditTemplate, isCurrent }) {
-  const isEmpty   = !slot.className;
-  const hasReport = !!report;
-
-  const counts = hasReport ? {
-    pos: Object.values(report.marks || {}).filter(m => m === "positive").length,
-    neg: Object.values(report.marks || {}).filter(m => m === "negative").length,
-    fl:  Object.values(report.marks || {}).filter(m => m === "flag").length,
-    abs: Object.values(report.marks || {}).filter(m => m === "absent").length,
-  } : null;
-
-  return (
-    <div style={{
-      background: C.surface,
-      border:`1.5px solid ${isCurrent ? C.forest : hasReport ? C.green : isEmpty ? C.border : C.borderBright}`,
-      borderRadius:12, overflow:"hidden",
-      borderLeft:`4px solid ${isCurrent ? C.forest : hasReport ? C.green : isEmpty ? C.border : C.amber}`,
-      boxShadow: isCurrent ? "0 4px 16px rgba(30,58,47,.14)" : hasReport ? "0 2px 8px rgba(13,122,71,.08)" : isEmpty ? "none" : "0 2px 8px rgba(0,0,0,.04)",
-    }}>
-      <div style={{
-        padding:"5px 12px", display:"flex", justifyContent:"space-between", alignItems:"center",
-        background: isCurrent ? C.forest : hasReport ? C.greenBg : isEmpty ? C.bg : C.amberBg,
-        borderBottom:`1px solid ${isCurrent ? C.forestMid : hasReport ? C.green+"33" : isEmpty ? C.border : C.amber+"33"}`,
-      }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <span style={{ fontFamily:MONO, fontSize:11, letterSpacing:1.5, fontWeight:700,
-            color: isCurrent ? C.amberBg : hasReport ? C.green : isEmpty ? C.muted : C.amber }}>
-            {slot.time}
-          </span>
-          {isCurrent && (
-            <span style={{ fontFamily:MONO, fontSize:9, fontWeight:800, letterSpacing:1,
-              color:C.forest, background:C.amberBg, padding:"1px 7px", borderRadius:99 }}>
-              NOW
-            </span>
-          )}
-          {slot.room && (
-            <span style={{ fontFamily:MONO, fontSize:10, fontWeight:700, letterSpacing:.5,
-              color: isCurrent ? C.amberBg : slot.room === "Room A" ? C.purple : C.forest,
-              background: isCurrent ? "rgba(255,255,255,.15)" : slot.room === "Room A" ? C.purpleBg : C.greenDim,
-              padding:"1px 7px", borderRadius:99 }}>
-              {slot.room}
-            </span>
-          )}
-        </div>
-        {hasReport && !isCurrent && <span style={{ fontSize:10, color:C.green, fontWeight:800, letterSpacing:.5 }}>✓ LOGGED</span>}
-        {hasReport &&  isCurrent && <span style={{ fontSize:10, color:C.amberBg, fontWeight:800, letterSpacing:.5 }}>✓ LOGGED</span>}
-      </div>
-
-      <div style={{ padding:"12px 14px" }}>
-        {isEmpty ? (
-          <div style={{ textAlign:"center", padding:"8px 0" }}>
-            <p style={{ fontSize:12, color:C.muted, marginBottom:8 }}>No class scheduled</p>
-            <Btn variant="dim" small onClick={onEditTemplate}>Edit template</Btn>
-          </div>
-        ) : (
-          <>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-              <div style={{ flex:1 }}>
-                <h3 style={{ fontSize:14, fontWeight:700, color:C.forest, lineHeight:1.3 }}>{slot.className}</h3>
-                <p style={{ fontSize:12, color:C.textDim, marginTop:2 }}>
-                  {slot.studentNames.length} student{slot.studentNames.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-              <button onClick={onEditTemplate} title="Edit template" style={{
-                background:"none", border:"none", color:C.muted, fontSize:13, cursor:"pointer", padding:"2px 5px",
-              }}>✎</button>
-            </div>
-
-            {slot.studentNames.length > 0 && (
-              <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:10 }}>
-                {slot.studentNames.map(name => {
-                  const mark = report?.marks?.[name] || "none";
-                  const mc = {
-                    positive:{ bg:C.greenBg, col:C.green },
-                    negative:{ bg:C.coralBg, col:C.coral },
-                    flag:    { bg:C.amberBg, col:C.amber },
-                    absent:  { bg:"#F3F4F6", col:"#6B7280" },
-                    none:    { bg:C.bg,      col:C.textDim },
-                  }[mark] || { bg:C.bg, col:C.textDim };
-                  return (
-                    <span key={name} style={{
-                      padding:"2px 9px", borderRadius:99, fontSize:11, fontWeight:600,
-                      background:mc.bg, color:mc.col,
-                      border:`1px solid ${mark !== "none" ? mc.col+"44" : C.border}`,
-                      textDecoration: mark === "absent" ? "line-through" : "none",
-                    }}>{name}</span>
-                  );
-                })}
-              </div>
-            )}
-
-            {hasReport && counts && (
-              <div style={{ display:"flex", gap:10, marginBottom:10, flexWrap:"wrap", fontSize:12, alignItems:"center" }}>
-                <span style={{ color:C.textDim }}>{report.mood.split(" ")[0]} {report.engagement.split(" ")[0]}</span>
-                {counts.pos > 0 && <span style={{ color:C.green, fontWeight:700 }}>✓ {counts.pos}</span>}
-                {counts.neg > 0 && <span style={{ color:C.coral, fontWeight:700 }}>✗ {counts.neg}</span>}
-                {counts.fl  > 0 && <span style={{ color:C.amber, fontWeight:700 }}>🚩 {counts.fl}</span>}
-                {counts.abs > 0 && <span style={{ color:C.muted, fontWeight:700 }}>○ {counts.abs}</span>}
-                {report.feedbackSent && <span style={{ color:C.blue, fontWeight:700 }} title="Feedback sent to parents">✉ sent</span>}
-              </div>
-            )}
-
-            <Btn variant={hasReport ? "ghost" : "primary"} small full onClick={onLog} style={{ fontSize:12 }}>
-              {hasReport ? "View / Edit Report" : "Log This Class →"}
-            </Btn>
-          </>
-        )}
-      </div>
+  <!-- ══════════ SUCCESS SCREEN ══════════ -->
+  <div id="successScreen" class="form-container hidden">
+    <div class="success-screen">
+      <div class="success-icon">✅</div>
+      <h2>送信完了</h2>
+      <p>欠席連絡を受け付けました。<br>確認のメッセージをLINEでお送りします。</p>
+      <button class="close-btn" onclick="closeLiff()">閉じる</button>
+      <p id="closeMessage" class="close-message hidden">画面を下にスワイプして閉じてください。</p>
     </div>
-  );
-}
+  </div>
 
-// ── Date Nav ──────────────────────────────────────────────────────────────────
-function DateNav({ date, onChange }) {
-  const isToday = date === todayStr();
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
-      <button onClick={() => onChange(addDays(date, -1))} style={{
-        background:C.surface, border:`1.5px solid ${C.border}`, borderRadius:8,
-        padding:"6px 14px", color:C.text, cursor:"pointer", fontSize:18, lineHeight:1,
-        boxShadow:"0 1px 3px rgba(0,0,0,.06)",
-      }}>‹</button>
-      <div style={{ textAlign:"center" }}>
-        <p style={{ fontFamily:SERIF, fontSize:20, color:C.forest }}>{fmtDay(date)}</p>
-        {isToday && <span style={{ fontFamily:MONO, fontSize:10, color:C.amber, letterSpacing:2, fontWeight:600 }}>TODAY</span>}
-      </div>
-      <button onClick={() => onChange(addDays(date, 1))} style={{
-        background:C.surface, border:`1.5px solid ${C.border}`, borderRadius:8,
-        padding:"6px 14px", color:C.text, cursor:"pointer", fontSize:18, lineHeight:1,
-        boxShadow:"0 1px 3px rgba(0,0,0,.06)",
-      }}>›</button>
-      {!isToday && <Btn variant="amber" small onClick={() => onChange(todayStr())}>Today</Btn>}
-    </div>
-  );
-}
+  <!-- ══════════ ERROR SCREEN ══════════ -->
+  <div id="errorScreen" class="form-container hidden">
+    <div class="status-message status-error" id="errorMessage">エラーが発生しました。</div>
+    <button class="submit-btn" onclick="location.reload()">もう一度やり直す</button>
+  </div>
 
-// ── Day Stats ─────────────────────────────────────────────────────────────────
-function DayStats({ slots, dayReports }) {
-  const active = slots.filter(s => s.className);
-  const logged = active.filter(s => dayReports[s.id]).length;
-  const allMarks = active.flatMap(s => Object.values(dayReports[s.id]?.marks || {}));
-  const pos = allMarks.filter(m => m === "positive").length;
-  const neg = allMarks.filter(m => m === "negative").length;
-  const fl  = allMarks.filter(m => m === "flag").length;
-  if (!active.length) return null;
-  return (
-    <div style={{ display:"flex", gap:16, flexWrap:"wrap", alignItems:"center" }}>
-      <span style={{ fontFamily:MONO, fontSize:12, fontWeight:600, color: logged === active.length ? C.green : C.amber }}>
-        {logged}/{active.length} logged
-      </span>
-      {pos > 0 && <span style={{ fontSize:12, color:C.green, fontWeight:700 }}>✓ {pos}</span>}
-      {neg > 0 && <span style={{ fontSize:12, color:C.coral, fontWeight:700 }}>✗ {neg}</span>}
-      {fl  > 0 && <span style={{ fontSize:12, color:C.amber, fontWeight:700 }}>🚩 {fl}</span>}
-    </div>
-  );
-}
 
-// ── Analytics helpers ─────────────────────────────────────────────────────────
-function parseReportId(id) {
-  const match = id.match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
-  if (!match) return null;
-  return { date: match[1], slotId: match[2] };
-}
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    const CONFIG = {
+      LIFF_ID: '2009843493-wbTFJitn',
+      WEBHOOK_URL: 'https://hook.eu1.make.com/68awyiuq2m5y6tneni64yp7eqlcnm64s',
+      STUDENT_API: 'https://hook.eu1.make.com/5ccwg3jy3wnee5pizu3e6evn0zua6yrb',
+      API_SECRET: '1234567890123456789012345678901234567890'
+    };
 
-function buildAnalyticsRecords(rows, weekTemplates) {
-  const records = [];
-  rows.forEach(row => {
-    const parsed = parseReportId(row.id);
-    if (!parsed) return;
-    const { date, slotId } = parsed;
-    const snap = row.data?.snapshot;
+    const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 
-    let className, room, time, classType, level, studentNames;
+    let lineUserId = null;
+    let lineDisplayName = null;
+    let studentList = [];
+    let currentStudent = null;
+    let selectedDate = null;
+    let holidaysList = [];
 
-    if (snap && snap.className) {
-      // New-style report: it carries its own class details from the moment it
-      // was logged, so later template edits (rename, level change, roster change)
-      // can't retroactively alter it.
-      className    = snap.className;
-      room         = snap.room;
-      time         = snap.time;
-      classType    = snap.classType || "Other";
-      level        = snap.level     || "—";
-      studentNames = snap.studentNames || [];
-    } else {
-      // Old-style report saved before snapshots existed — fall back to looking
-      // the slot up in the current template (previous behavior).
-      const dow = DAYS[new Date(date + "T12:00:00").getDay()];
-      const daySlots = weekTemplates?.[dow] || [];
-      const slot = daySlots.find(s => s.id === slotId);
-      if (!slot || !slot.className) return;
-      className    = slot.className;
-      room         = slot.room;
-      time         = slot.time;
-      classType    = slot.classType || "Other";
-      level        = slot.level     || "—";
-      studentNames = slot.studentNames || [];
-    }
-
-    if (!className) return;
-
-    records.push({
-      date, slotId, dow: DAYS[new Date(date + "T12:00:00").getDay()],
-      className, room, time, classType, level,
-      studentNames,
-      report:  row.data,
-      savedAt: row.saved_at,
-    });
-  });
-  return records;
-}
-
-function aggregateCounts(records, field, options) {
-  const counts = {};
-  options.forEach(o => counts[o] = 0);
-  records.forEach(r => {
-    const val = r.report?.[field];
-    if (val && counts[val] !== undefined) counts[val]++;
-  });
-  return counts;
-}
-
-// Split a full name into tokens for matching: "Tanaka Yuu" → ["tanaka", "yuu"]
-function nameTokens(fullName) {
-  return fullName.trim().toLowerCase().split(/\s+/).filter(Boolean);
-}
-
-// Check whether a note mentions a student.
-// Rules:
-//  1. Only check students who are in the class this note was written for (rec.className matches).
-//  2. Build a list of all name tokens for every student in THAT class.
-//  3. For each token in THIS student's name: if the note contains that token AND no other
-//     student in the same class has the same token, it's an unambiguous match.
-//     If another student shares the token, require at least two tokens to match.
-function noteMatchesStudent(note, studentName, classStudentNames) {
-  const noteLower   = note.toLowerCase();
-  const myTokens    = nameTokens(studentName);
-
-  // tokens of other students in the same class
-  const otherTokenSets = classStudentNames
-    .filter(n => n !== studentName)
-    .map(n => nameTokens(n));
-
-  let matchedTokens = 0;
-  for (const tok of myTokens) {
-    // check as whole word — wrap in word-boundary-like check
-    const re = new RegExp(`(?:^|[\\s,、。!?]|$)${tok}(?:[\\s,、。!?]|$)`, "i");
-    if (re.test(note) || noteLower.includes(tok)) {
-      matchedTokens++;
-    }
-  }
-
-  if (matchedTokens === 0) return false;
-
-  // If another student in the same class shares ALL matched tokens, require
-  // additional tokens to distinguish (teacher should use last name).
-  const ambiguous = otherTokenSets.some(otherToks =>
-    myTokens.slice(0, matchedTokens).every(t => otherToks.includes(t))
-  );
-
-  // Ambiguous single-token match → only accept if we matched more than one token
-  if (ambiguous && matchedTokens < 2) return false;
-
-  return true;
-}
-
-function buildStudentProfiles(records) {
-  const profiles = {};
-  records.forEach(rec => {
-    const marks    = rec.report?.marks || {};
-    const note     = rec.report?.note  || "";
-    const classStudentNames = rec.studentNames; // all students in THIS class/slot
-
-    rec.studentNames.forEach(name => {
-      if (!profiles[name]) {
-        profiles[name] = {
-          name, classes: 0, positive: 0, negative: 0, flag: 0, absent: 0,
-          classNames: new Set(), mentions: [],
-        };
+    async function initLiff() {
+      try {
+        await liff.init({ liffId: CONFIG.LIFF_ID });
+        if (!liff.isLoggedIn()) { liff.login(); return; }
+        const profile = await liff.getProfile();
+        lineUserId = profile.userId;
+        lineDisplayName = profile.displayName;
+        await loadStudents();
+      } catch (err) {
+        console.error('LIFF init error:', err);
+        showError('LIFFの初期化に失敗しました。LINEアプリから開き直してください。');
       }
-      const p = profiles[name];
-      p.classes++;
-      p.classNames.add(rec.className);
-      const m = marks[name] || "none";
-      if (m === "positive") p.positive++;
-      else if (m === "negative") p.negative++;
-      else if (m === "flag") p.flag++;
-      else if (m === "absent") p.absent++;
+    }
 
-      // Note matching: scoped to this student's class, handles first/last names
-      if (note && noteMatchesStudent(note, name, classStudentNames)) {
-        p.mentions.push({
-          note,
-          date:        rec.date,
-          className:   rec.className,
-          mark:        m,
-          mood:        rec.report?.mood        || "",
-          engagement:  rec.report?.engagement  || "",
-          performance: rec.report?.performance || "",
-          feedbackSent: rec.report?.feedbackSent || false,
-        });
-      }
-    });
-  });
-  return Object.values(profiles).sort((a, b) => a.name.localeCompare(b.name));
-}
-
-// ── Customer health score ─────────────────────────────────────────────────────
-// Computed from data the school already logs: attendance, marks, concern rates.
-// Transparent rules, no magic weights — the reasons are shown to the teacher.
-function computeStudentHealth(profile) {
-  const attended = profile.classes - profile.absent;
-  if (profile.classes < 3) {
-    return { level: "new", color: "#6B7280", bg: "#F3F4F6", label: "New",
-      reasons: ["Fewer than 3 logged classes — not enough data yet"], attPct: null, posPct: null };
-  }
-  const attPct     = Math.round(attended / profile.classes * 100);
-  const posPct     = attended > 0 ? Math.round(profile.positive / attended * 100) : 0;
-  const concerns   = profile.negative + profile.flag;
-  const concernPct = attended > 0 ? Math.round(concerns / attended * 100) : 0;
-
-  const reasons = [];
-  let level = "green";
-
-  if (attPct < 85)                    { reasons.push(`Attendance ${attPct}%`); level = "yellow"; }
-  if (posPct < 25 && attended >= 4)   { reasons.push(`Low positive rate (${posPct}%)`); level = "yellow"; }
-  if (concernPct >= 25)               { reasons.push(`Concern/flag rate ${concernPct}%`); level = "yellow"; }
-  if (attPct < 70)                    { reasons.push(`Attendance critically low (${attPct}%)`); level = "red"; }
-  if (concernPct >= 40)               { reasons.push("Frequent concerns/flags"); level = "red"; }
-  if (profile.negative > profile.positive && attended >= 4) { reasons.push("More concerns than positives"); level = "red"; }
-
-  if (level === "green") reasons.push("Attendance and marks look healthy");
-
-  const meta = {
-    green:  { color: C.green, bg: C.greenBg, label: "Healthy" },
-    yellow: { color: C.amber, bg: C.amberBg, label: "Watch"   },
-    red:    { color: C.coral, bg: C.coralBg, label: "At Risk" },
-  }[level];
-
-  return { level, ...meta, reasons, attPct, posPct };
-}
-
-const HEALTH_RANK = { red: 0, yellow: 1, new: 2, green: 3 };
-const HEALTH_ICON = { red: "🔴", yellow: "🟡", new: "⚪", green: "🟢" };
-
-function isoWeekRange(offset = 0) {
-  const now = new Date();
-  const day = now.getDay();
-  const mon = new Date(now);
-  mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-  return {
-    from:  mon.toISOString().slice(0, 10),
-    to:    sun.toISOString().slice(0, 10),
-    label: offset === 0 ? "This Week" : offset === -1 ? "Last Week" : `${Math.abs(offset)}w ago`,
-  };
-}
-
-function monthRange(offset = 0) {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth() + offset;
-  const first = new Date(y, m, 1);
-  const last  = new Date(y, m + 1, 0);
-  return {
-    from:  first.toISOString().slice(0, 10),
-    to:    last.toISOString().slice(0, 10),
-    label: first.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
-  };
-}
-
-// ── SVG Pie Chart ─────────────────────────────────────────────────────────────
-function PieChart({ data, size = 140 }) {
-  const total = data.reduce((s, d) => s + d.value, 0);
-  if (total === 0) return (
-    <div style={{ width: size, height: size, borderRadius: "50%",
-      background: C.border, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ fontSize: 11, color: C.muted }}>No data</span>
-    </div>
-  );
-
-  let cumAngle = -90;
-  const slices = data.map(d => {
-    const pct   = d.value / total;
-    const angle = pct * 360;
-    const start = cumAngle;
-    cumAngle += angle;
-    return { ...d, pct, startAngle: start, endAngle: cumAngle };
-  });
-
-  const toXY = (angle, r) => {
-    const rad = (angle * Math.PI) / 180;
-    return { x: 50 + r * Math.cos(rad), y: 50 + r * Math.sin(rad) };
-  };
-
-  const r = 40;
-  const cx = 50, cy = 50;
-
-  return (
-    <svg viewBox="0 0 100 100" width={size} height={size} style={{ overflow: "visible" }}>
-      {slices.map((s, i) => {
-        if (s.value === 0) return null;
-        const start = toXY(s.startAngle, r);
-        const end   = toXY(s.endAngle,   r);
-        const large = (s.endAngle - s.startAngle) > 180 ? 1 : 0;
-        if (s.pct >= 0.9999) {
-          return <circle key={i} cx={cx} cy={cy} r={r} fill={s.color} />;
+    async function loadStudents() {
+      try {
+        // Fetch holidays first
+        try {
+          const holUrl = CONFIG.STUDENT_API + '?mode=holidays&secret=' + encodeURIComponent(CONFIG.API_SECRET);
+          const holRes = await fetch(holUrl);
+          const holData = await holRes.json();
+          holidaysList = holData.holidays || [];
+        } catch (err) {
+          console.error('holidays fetch failed:', err);
+          holidaysList = [];
         }
-        return (
-          <path key={i}
-            d={`M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${large} 1 ${end.x} ${end.y} Z`}
-            fill={s.color} stroke={C.white} strokeWidth="1"
-          />
-        );
-      })}
-      <circle cx={cx} cy={cy} r={22} fill={C.surface} />
-      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="10" fontWeight="700" fill={C.text}>{total}</text>
-      <text x={cx} y={cy + 8} textAnchor="middle" fontSize="7" fill={C.muted}>classes</text>
-    </svg>
-  );
-}
 
-function PieLegend({ data, total }) {
-  return (
-    <div style={{ display: "grid", gap: 5, minWidth: 0, width: "100%" }}>
-      {data.filter(d => d.value > 0).map(d => (
-        <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, width: "100%" }}>
-          <div style={{ width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: C.textDim, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.label.replace(/^.+?\s/, "")}</span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: C.text, fontFamily: MONO, flexShrink: 0 }}>{d.value}</span>
-          <span style={{ fontSize: 11, color: C.muted, fontFamily: MONO, minWidth: 36, textAlign: "right", flexShrink: 0 }}>
-            {total > 0 ? Math.round(d.value / total * 100) + "%" : "—"}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MetricPie({ title, data }) {
-  const total = data.reduce((s, d) => s + d.value, 0);
-  return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18 }}>
-      <p style={{ fontFamily: MONO, fontSize: 11, color: C.muted, textTransform: "uppercase",
-        letterSpacing: 1, marginBottom: 14, fontWeight: 700 }}>{title}</p>
-      <div style={{ display: "flex", gap: 20, alignItems: "center", minWidth: 0 }}>
-        <PieChart data={data} size={120} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <PieLegend data={data} total={total} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Student Profile Card (clickable summary) ──────────────────────────────────
-function StudentProfileCard({ profile, onClick }) {
-  const attended = profile.classes - profile.absent;
-  const attPct   = profile.classes > 0 ? Math.round(attended / profile.classes * 100) : 0;
-  const posPct   = attended > 0 ? Math.round(profile.positive / attended * 100) : 0;
-  const barColor = posPct >= 60 ? C.green : posPct >= 30 ? C.amber : C.coral;
-  const health   = computeStudentHealth(profile);
-
-  return (
-    <div onClick={onClick} style={{
-      background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
-      padding: "14px 16px", cursor: "pointer", transition: "all .15s",
-      borderLeft: `4px solid ${health.color}`,
-    }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = C.forest; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,0,0,.08)"; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-        <div>
-          <p style={{ fontWeight: 700, fontSize: 15, color: C.forest }}>
-            {profile.name}{" "}
-            <span style={{ fontSize: 10, fontWeight: 800, color: health.color, background: health.bg,
-              padding: "2px 8px", borderRadius: 99, verticalAlign: "middle" }}>
-              {HEALTH_ICON[health.level]} {health.label}
-            </span>
-          </p>
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{[...profile.classNames].join(", ")}</p>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <p style={{ fontFamily: MONO, fontSize: 18, fontWeight: 700, color: C.forest }}>{attPct}%</p>
-          <p style={{ fontSize: 10, color: C.muted }}>attendance</p>
-        </div>
-      </div>
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-          <span style={{ fontSize: 11, color: C.textDim }}>Positive rate</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: barColor, fontFamily: MONO }}>{posPct}%</span>
-        </div>
-        <div style={{ height: 6, background: C.border, borderRadius: 99, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${posPct}%`, background: barColor, borderRadius: 99, transition: "width .4s ease" }} />
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 8, fontSize: 11, alignItems: "center" }}>
-        {[
-          { icon: "✓",  val: profile.positive, col: C.green },
-          { icon: "✗",  val: profile.negative, col: C.coral },
-          { icon: "🚩", val: profile.flag,     col: C.amber },
-          { icon: "○",  val: profile.absent,   col: C.muted },
-        ].map(({ icon, val, col }) => (
-          <span key={icon} style={{ color: col, fontWeight: 700, fontFamily: MONO }}>{icon} {val}</span>
-        ))}
-        <span style={{ color: C.muted, marginLeft: "auto" }}>{profile.classes} logged</span>
-        {profile.mentions.length > 0 && (
-          <span style={{ fontSize: 10, color: C.purple, fontWeight: 700 }}>💬 {profile.mentions.length}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Eiken data ────────────────────────────────────────────────────────────────
-const EIKEN_LEVELS = ["5級","4級","3級","準2級","2級","準1級","1級"];
-const EIKEN_GRADE_EN = { "5級":"Grade 5","4級":"Grade 4","3級":"Grade 3","準2級":"Pre-Grade 2","2級":"Grade 2","準1級":"Pre-Grade 1","1級":"Grade 1" };
-
-// Eiken score criteria per level (Primary + Secondary where applicable)
-// Source: Eiken official passing criteria
-const EIKEN_CRITERIA = {
-  "5級":  { primary: { total: 550, pass: 419, sections: [{ name:"Vocab/Grammar", max:275 },{ name:"Reading", max:275 }] }, secondary: null },
-  "4級":  { primary: { total: 700, pass: 480, sections: [{ name:"Vocab/Grammar", max:350 },{ name:"Reading", max:350 }] }, secondary: null },
-  "3級":  { primary: { total: 1950, pass: 1103, sections: [{ name:"Vocabulary", max:650 },{ name:"Reading", max:650 },{ name:"Listening", max:650 }] }, secondary: { total: 1950, pass: 1103, sections: [{ name:"Writing", max:650 },{ name:"Speaking", max:1300 }] } },
-  "準2級": { primary: { total: 1950, pass: 1322, sections: [{ name:"Vocabulary", max:650 },{ name:"Reading", max:650 },{ name:"Listening", max:650 }] }, secondary: { total: 1950, pass: 1322, sections: [{ name:"Writing", max:650 },{ name:"Speaking", max:1300 }] } },
-  "2級":  { primary: { total: 2150, pass: 1520, sections: [{ name:"Vocabulary", max:650 },{ name:"Reading", max:700 },{ name:"Listening", max:800 }] }, secondary: { total: 2150, pass: 1520, sections: [{ name:"Writing", max:850 },{ name:"Speaking", max:1300 }] } },
-  "準1級": { primary: { total: 2250, pass: 1792, sections: [{ name:"Vocabulary", max:750 },{ name:"Reading", max:750 },{ name:"Listening", max:750 }] }, secondary: { total: 2250, pass: 1792, sections: [{ name:"Writing", max:750 },{ name:"Speaking", max:1500 }] } },
-  "1級":  { primary: { total: 2550, pass: 2028, sections: [{ name:"Vocabulary", max:850 },{ name:"Reading", max:850 },{ name:"Listening", max:850 }] }, secondary: { total: 2550, pass: 2028, sections: [{ name:"Writing", max:850 },{ name:"Speaking", max:1700 }] } },
-};
-
-const SCHOOL_TERMS = ["Term 1","Term 2","Term 3","Term 4"];
-const CURRENT_YEAR = new Date().getFullYear();
-const YEARS = Array.from({ length: 6 }, (_, i) => String(CURRENT_YEAR - i));
-const EIKEN_SESSIONS = ["第1回 (June)","第2回 (October)","第3回 (January)"];
-
-// ── Onboarding checklist (30/60/90) ───────────────────────────────────────────
-const ONBOARDING_ITEMS = [
-  { id: "welcome",        phase: 30, label: "Welcome packet given to parents" },
-  { id: "firstUpdate",    phase: 30, label: "First parent update sent" },
-  { id: "firstRelay",     phase: 30, label: "First Output Relay cycle completed" },
-  { id: "videoShared",    phase: 60, label: "Lesson explanation videos shared" },
-  { id: "checkIn",        phase: 60, label: "Parent check-in conversation done" },
-  { id: "secondRelay",    phase: 60, label: "Second Output Relay cycle completed" },
-  { id: "progressReport", phase: 90, label: "First progress report delivered" },
-  { id: "parentQA",       phase: 90, label: "Parent questions answered" },
-  { id: "referralInvite", phase: 90, label: "Referral invitation mentioned" },
-];
-
-const COMMENT_TYPES = [
-  { id: "positive", label: "😊 Positive",  color: C.green,  bg: C.greenBg  },
-  { id: "concern",  label: "😟 Concern",   color: C.coral,  bg: C.coralBg  },
-  { id: "request",  label: "🙏 Request",   color: C.blue,   bg: C.blueBg   },
-  { id: "note",     label: "📝 Note",      color: C.purple, bg: C.purpleBg },
-];
-
-const REFERRAL_STATUSES = [
-  { id: "mentioned", label: "Mentioned", color: C.amber, bg: C.amberBg },
-  { id: "visited",   label: "Visited",   color: C.blue,  bg: C.blueBg  },
-  { id: "joined",    label: "Joined ✓",  color: C.green, bg: C.greenBg },
-];
-
-// ── SVG Line Chart ────────────────────────────────────────────────────────────
-function LineChart({ points, maxY = 100, minY = 0, width = 400, height = 160, passLine }) {
-  if (!points || points.length === 0) return (
-    <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ fontSize: 12, color: C.muted }}>No data yet</span>
-    </div>
-  );
-
-  const pad = { top: 16, right: 20, bottom: 36, left: 44 };
-  const W = width  - pad.left - pad.right;
-  const H = height - pad.top  - pad.bottom;
-  const range = maxY - minY || 1;
-
-  const toX = (i) => points.length === 1 ? W / 2 : (i / (points.length - 1)) * W;
-  const toY = (v) => H - ((v - minY) / range) * H;
-
-  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${toX(i).toFixed(1)} ${toY(p.score).toFixed(1)}`).join(" ");
-
-  // Y axis ticks
-  const ticks = 4;
-  const tickVals = Array.from({ length: ticks + 1 }, (_, i) => minY + Math.round((range / ticks) * i));
-
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ overflow: "visible", maxWidth: width }}>
-      <g transform={`translate(${pad.left},${pad.top})`}>
-        {/* Grid lines */}
-        {tickVals.map(v => (
-          <line key={v} x1={0} y1={toY(v)} x2={W} y2={toY(v)}
-            stroke={C.border} strokeWidth="1" strokeDasharray="4 3" />
-        ))}
-        {/* Pass line */}
-        {passLine !== undefined && (
-          <>
-            <line x1={0} y1={toY(passLine)} x2={W} y2={toY(passLine)}
-              stroke={C.green} strokeWidth="1.5" strokeDasharray="6 3" opacity=".7" />
-            <text x={W + 4} y={toY(passLine) + 4} fontSize="9" fill={C.green} fontFamily="monospace">Pass</text>
-          </>
-        )}
-        {/* Y axis labels */}
-        {tickVals.map(v => (
-          <text key={v} x={-6} y={toY(v) + 4} fontSize="9" fill={C.muted}
-            textAnchor="end" fontFamily="monospace">{v}</text>
-        ))}
-        {/* X axis labels */}
-        {points.map((p, i) => (
-          <text key={i} x={toX(i)} y={H + 18} fontSize="9" fill={C.muted}
-            textAnchor="middle" fontFamily="monospace">{p.label}</text>
-        ))}
-        {/* Line */}
-        <path d={pathD} fill="none" stroke={C.forest} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        {/* Dots */}
-        {points.map((p, i) => (
-          <g key={i}>
-            <circle cx={toX(i)} cy={toY(p.score)} r={5} fill={C.surface} stroke={C.forest} strokeWidth="2.5" />
-            <text x={toX(i)} y={toY(p.score) - 9} fontSize="9" fill={C.forest}
-              textAnchor="middle" fontWeight="700" fontFamily="monospace">{p.score}</text>
-          </g>
-        ))}
-      </g>
-    </svg>
-  );
-}
-
-// ── Onboarding 30/60/90 Section ───────────────────────────────────────────────
-function OnboardingSection({ initialData, onSave }) {
-  const ob = initialData?.onboarding || { startDate: "", items: {} };
-  const [startDate, setStartDate] = useState(ob.startDate || "");
-  const [items,     setItems]     = useState(ob.items || {});
-  const [saving,    setSaving]    = useState(false);
-
-  const done = ONBOARDING_ITEMS.filter(i => items[i.id]).length;
-  const pct  = Math.round(done / ONBOARDING_ITEMS.length * 100);
-  const daysSince = startDate ? Math.floor((Date.now() - new Date(startDate + "T12:00:00").getTime()) / 86400000) : null;
-
-  const persist = async (nextItems, nextStart) => {
-    setSaving(true);
-    try { await onSave({ onboarding: { startDate: nextStart, items: nextItems } }); }
-    finally { setSaving(false); }
-  };
-
-  const toggle = (id) => {
-    const ni = { ...items, [id]: !items[id] };
-    setItems(ni);
-    persist(ni, startDate);
-  };
-
-  const changeStart = (v) => {
-    setStartDate(v);
-    persist(items, v);
-  };
-
-  const phases = [30, 60, 90];
-
-  return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
-        <div>
-          <p style={{ fontFamily: MONO, fontSize: 11, color: C.forest, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
-            🚀 Onboarding — 30 / 60 / 90 Days
-          </p>
-          {daysSince !== null && daysSince >= 0 && (
-            <p style={{ fontSize: 12, color: C.textDim, marginTop: 3 }}>
-              Day <strong style={{ color: C.forest }}>{daysSince}</strong> since start
-              {saving && <span style={{ color: C.amber, marginLeft: 8, fontFamily: MONO, fontSize: 11 }}>saving…</span>}
-            </p>
-          )}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 11, color: C.muted }}>Started:</span>
-          <input type="date" value={startDate} onChange={e => changeStart(e.target.value)}
-            style={{ background: C.bg, border: `1.5px solid ${C.border}`, borderRadius: 7,
-              padding: "5px 9px", fontSize: 12, color: C.text, outline: "none" }} />
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-          <span style={{ fontSize: 11, color: C.textDim }}>{done}/{ONBOARDING_ITEMS.length} complete</span>
-          <span style={{ fontSize: 11, fontWeight: 700, fontFamily: MONO, color: pct === 100 ? C.green : C.amber }}>{pct}%</span>
-        </div>
-        <div style={{ height: 7, background: C.border, borderRadius: 99, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${pct}%`, background: pct === 100 ? C.green : C.amber, borderRadius: 99, transition: "width .3s" }} />
-        </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-        {phases.map(phase => (
-          <div key={phase} style={{ background: C.bg, borderRadius: 9, padding: "10px 12px" }}>
-            <p style={{ fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: .8, marginBottom: 8 }}>
-              {phase === 30 ? "First 30 days" : phase === 60 ? "31–60 days" : "61–90 days"}
-            </p>
-            <div style={{ display: "grid", gap: 6 }}>
-              {ONBOARDING_ITEMS.filter(i => i.phase === phase).map(item => {
-                const checked = !!items[item.id];
-                return (
-                  <label key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer" }}>
-                    <input type="checkbox" checked={checked} onChange={() => toggle(item.id)}
-                      style={{ width: 15, height: 15, marginTop: 1, accentColor: C.green, cursor: "pointer", flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, lineHeight: 1.4,
-                      color: checked ? C.muted : C.textMid,
-                      textDecoration: checked ? "line-through" : "none" }}>
-                      {item.label}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Parent Comments Section ───────────────────────────────────────────────────
-function ParentCommentsSection({ initialData, onSave }) {
-  const [comments, setComments] = useState(initialData?.parentComments || []);
-  const [adding,   setAdding]   = useState(false);
-  const [saving,   setSaving]   = useState(false);
-  // form
-  const [text,     setText]     = useState("");
-  const [type,     setType]     = useState("positive");
-  const [cDate,    setCDate]    = useState(todayStr());
-  const [followUp, setFollowUp] = useState(false);
-
-  const persist = async (next) => {
-    setSaving(true);
-    try { await onSave({ parentComments: next }); setComments(next); }
-    finally { setSaving(false); }
-  };
-
-  const add = async () => {
-    if (!text.trim()) return;
-    const entry = { id: Date.now(), date: cDate, type, text: text.trim(), followUp };
-    await persist([entry, ...comments]);
-    setText(""); setFollowUp(false); setAdding(false);
-  };
-
-  const toggleFollowUp = (id) => {
-    persist(comments.map(c => c.id === id ? { ...c, followUp: !c.followUp } : c));
-  };
-
-  const remove = (id) => persist(comments.filter(c => c.id !== id));
-
-  const needsFollowUp = comments.filter(c => c.followUp).length;
-  const fmtShort = (d) => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" });
-
-  return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <div>
-          <p style={{ fontFamily: MONO, fontSize: 11, color: C.blue, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
-            💬 Parent Comments &amp; Notes
-          </p>
-          {needsFollowUp > 0 && (
-            <p style={{ fontSize: 12, color: C.coral, marginTop: 3, fontWeight: 600 }}>
-              ⚠ {needsFollowUp} need{needsFollowUp === 1 ? "s" : ""} follow-up
-            </p>
-          )}
-        </div>
-        <Btn variant="ghost" small onClick={() => setAdding(!adding)}>{adding ? "Cancel" : "+ Add"}</Btn>
-      </div>
-
-      {adding && (
-        <div style={{ background: C.bg, borderRadius: 10, padding: 14, marginBottom: 14, display: "grid", gap: 12 }}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {COMMENT_TYPES.map(t => (
-              <button key={t.id} onClick={() => setType(t.id)} style={{
-                padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                border: `1.5px solid ${type === t.id ? t.color : C.border}`,
-                background: type === t.id ? t.bg : "transparent",
-                color: type === t.id ? t.color : C.muted,
-              }}>{t.label}</button>
-            ))}
-          </div>
-          <textarea value={text} onChange={e => setText(e.target.value)} rows={2}
-            placeholder="What did the parent say? Or an internal note about the student…"
-            style={{ width: "100%", background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 8,
-              padding: "9px 12px", fontSize: 13, color: C.text, outline: "none", lineHeight: 1.6 }} />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <input type="date" value={cDate} onChange={e => setCDate(e.target.value)}
-                style={{ background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 7, padding: "5px 9px", fontSize: 12, color: C.text, outline: "none" }} />
-              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: C.textDim }}>
-                <input type="checkbox" checked={followUp} onChange={e => setFollowUp(e.target.checked)}
-                  style={{ accentColor: C.coral, cursor: "pointer" }} />
-                Needs follow-up
-              </label>
-            </div>
-            <Btn variant="primary" small onClick={add} disabled={saving || !text.trim()}>
-              {saving ? "Saving…" : "Save Comment"}
-            </Btn>
-          </div>
-        </div>
-      )}
-
-      {comments.length === 0 ? (
-        <p style={{ fontSize: 13, color: C.muted, textAlign: "center", padding: "16px 0" }}>
-          No comments recorded yet. Log what parents tell you — it's retention gold.
-        </p>
-      ) : (
-        <div style={{ display: "grid", gap: 8 }}>
-          {comments.map(cm => {
-            const meta = COMMENT_TYPES.find(t => t.id === cm.type) || COMMENT_TYPES[3];
-            return (
-              <div key={cm.id} style={{
-                padding: "10px 12px", background: meta.bg, borderRadius: 9,
-                borderLeft: `3px solid ${meta.color}`,
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5, gap: 8 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: meta.color }}>{meta.label}</span>
-                    <span style={{ fontSize: 11, color: C.muted, fontFamily: MONO }}>{fmtShort(cm.date)}</span>
-                    {cm.followUp && (
-                      <span style={{ fontSize: 10, fontWeight: 800, color: C.coral, background: C.surface, padding: "1px 8px", borderRadius: 99 }}>
-                        ⚠ FOLLOW UP
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                    <button onClick={() => toggleFollowUp(cm.id)} title={cm.followUp ? "Mark resolved" : "Mark needs follow-up"}
-                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: cm.followUp ? C.green : C.muted }}>
-                      {cm.followUp ? "✓" : "⚑"}
-                    </button>
-                    <button onClick={() => remove(cm.id)} title="Delete"
-                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: C.muted }}>×</button>
-                  </div>
-                </div>
-                <p style={{ fontSize: 13, color: C.text, lineHeight: 1.6 }}>{cm.text}</p>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Referrals Section ─────────────────────────────────────────────────────────
-function ReferralsSection({ initialData, onSave }) {
-  const [referrals, setReferrals] = useState(initialData?.referrals || []);
-  const [adding,    setAdding]    = useState(false);
-  const [saving,    setSaving]    = useState(false);
-  const [refName,   setRefName]   = useState("");
-  const [refDate,   setRefDate]   = useState(todayStr());
-
-  const persist = async (next) => {
-    setSaving(true);
-    try { await onSave({ referrals: next }); setReferrals(next); }
-    finally { setSaving(false); }
-  };
-
-  const add = async () => {
-    if (!refName.trim()) return;
-    await persist([{ id: Date.now(), name: refName.trim(), date: refDate, status: "mentioned" }, ...referrals]);
-    setRefName(""); setAdding(false);
-  };
-
-  const setStatus = (id, status) => persist(referrals.map(r => r.id === id ? { ...r, status } : r));
-  const remove    = (id) => persist(referrals.filter(r => r.id !== id));
-
-  const joined = referrals.filter(r => r.status === "joined").length;
-
-  return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <div>
-          <p style={{ fontFamily: MONO, fontSize: 11, color: C.purple, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
-            🔗 Referrals From This Family
-          </p>
-          {referrals.length > 0 && (
-            <p style={{ fontSize: 12, color: C.textDim, marginTop: 3 }}>
-              {referrals.length} referral{referrals.length !== 1 ? "s" : ""} · <strong style={{ color: C.green }}>{joined} joined</strong>
-            </p>
-          )}
-        </div>
-        <Btn variant="ghost" small onClick={() => setAdding(!adding)}>{adding ? "Cancel" : "+ Add"}</Btn>
-      </div>
-
-      {adding && (
-        <div style={{ background: C.bg, borderRadius: 10, padding: 14, marginBottom: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <div style={{ flex: 1, minWidth: 160 }}>
-            <LightInput label="Referred family / student" value={refName} onChange={setRefName} placeholder="e.g. Yamada family" />
-          </div>
-          <input type="date" value={refDate} onChange={e => setRefDate(e.target.value)}
-            style={{ background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 7, padding: "8px 10px", fontSize: 13, color: C.text, outline: "none" }} />
-          <Btn variant="primary" small onClick={add} disabled={saving || !refName.trim()}>
-            {saving ? "Saving…" : "Save"}
-          </Btn>
-        </div>
-      )}
-
-      {referrals.length === 0 ? (
-        <p style={{ fontSize: 13, color: C.muted, textAlign: "center", padding: "12px 0" }}>
-          No referrals tracked yet. When this family mentions a friend — log it here.
-        </p>
-      ) : (
-        <div style={{ display: "grid", gap: 8 }}>
-          {referrals.map(r => (
-            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: C.bg, borderRadius: 9, flexWrap: "wrap" }}>
-              <span style={{ fontWeight: 600, fontSize: 13, color: C.forest, flex: 1, minWidth: 100 }}>{r.name}</span>
-              <span style={{ fontSize: 11, color: C.muted, fontFamily: MONO }}>{r.date}</span>
-              <div style={{ display: "flex", gap: 4 }}>
-                {REFERRAL_STATUSES.map(s => (
-                  <button key={s.id} onClick={() => setStatus(r.id, s.id)} style={{
-                    padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: "pointer",
-                    border: `1.5px solid ${r.status === s.id ? s.color : C.border}`,
-                    background: r.status === s.id ? s.bg : "transparent",
-                    color: r.status === s.id ? s.color : C.muted,
-                  }}>{s.label}</button>
-                ))}
-              </div>
-              <button onClick={() => remove(r.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: C.muted }}>×</button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Test Scores Section ───────────────────────────────────────────────────────
-function TestScoresSection({ studentName, initialData, onSave }) {
-  const [scores, setScores]       = useState(initialData?.testScores || []);
-  const [adding, setAdding]       = useState(false);
-  const [saving, setSaving]       = useState(false);
-  // Form state
-  const [year,   setYear]   = useState(String(CURRENT_YEAR));
-  const [term,   setTerm]   = useState(SCHOOL_TERMS[0]);
-  const [score,  setScore]  = useState("");
-  const [maxScore, setMaxScore] = useState("100");
-  const [notes,  setNotes]  = useState("");
-
-  const addScore = async () => {
-    if (!score) return;
-    const newEntry = { id: Date.now(), year, term, score: Number(score), maxScore: Number(maxScore), notes, date: todayStr() };
-    const updated = [...scores, newEntry].sort((a, b) =>
-      `${a.year}${SCHOOL_TERMS.indexOf(a.term)}`.localeCompare(`${b.year}${SCHOOL_TERMS.indexOf(b.term)}`)
-    );
-    setSaving(true);
-    await onSave({ testScores: updated });
-    setScores(updated);
-    setSaving(false);
-    setAdding(false);
-    setScore(""); setNotes("");
-  };
-
-  const removeScore = async (id) => {
-    const updated = scores.filter(s => s.id !== id);
-    await onSave({ testScores: updated });
-    setScores(updated);
-  };
-
-  // Build chart points — score as percentage of maxScore
-  const chartPoints = scores.map(s => ({
-    label: `${s.year.slice(2)}\n${s.term.replace("Term ","")}`,
-    score: s.maxScore ? Math.round(s.score / s.maxScore * 100) : s.score,
-    raw:   s.score,
-  }));
-
-  return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <p style={{ fontFamily: MONO, fontSize: 11, color: C.blue, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
-          📝 School Test Scores
-        </p>
-        <Btn variant="ghost" small onClick={() => setAdding(!adding)}>
-          {adding ? "Cancel" : "+ Add Score"}
-        </Btn>
-      </div>
-
-      {/* Add form */}
-      {adding && (
-        <div style={{ background: C.bg, borderRadius: 10, padding: 14, marginBottom: 16, display: "grid", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div>
-              <FieldLabel>Year</FieldLabel>
-              <select value={year} onChange={e => setYear(e.target.value)} style={{ width:"100%", background:C.surface, border:`1.5px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:13, color:C.text, outline:"none" }}>
-                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-            <div>
-              <FieldLabel>Term</FieldLabel>
-              <select value={term} onChange={e => setTerm(e.target.value)} style={{ width:"100%", background:C.surface, border:`1.5px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:13, color:C.text, outline:"none" }}>
-                {SCHOOL_TERMS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <LightInput label="Score" value={score} onChange={setScore} placeholder="e.g. 78" />
-            <LightInput label="Out of" value={maxScore} onChange={setMaxScore} placeholder="e.g. 100" />
-          </div>
-          <LightInput label="Notes (optional)" value={notes} onChange={setNotes} placeholder="e.g. Strong on listening, weak grammar" />
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-            <Btn variant="primary" small onClick={addScore} disabled={saving || !score}>
-              {saving ? "Saving…" : "Save Score"}
-            </Btn>
-          </div>
-        </div>
-      )}
-
-      {scores.length === 0 ? (
-        <p style={{ fontSize: 13, color: C.muted, textAlign: "center", padding: "20px 0" }}>No test scores recorded yet.</p>
-      ) : (
-        <>
-          {/* Line chart */}
-          <div style={{ marginBottom: 16, overflowX: "auto" }}>
-            <LineChart
-              points={chartPoints}
-              minY={0} maxY={100}
-              width={Math.max(300, chartPoints.length * 80)}
-              height={160}
-            />
-            <p style={{ fontSize: 10, color: C.muted, textAlign: "center", marginTop: 4 }}>Scores shown as % of total</p>
-          </div>
-
-          {/* Score table */}
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr style={{ borderBottom: `2px solid ${C.border}` }}>
-                  {["Year","Term","Score","/ Max","%","Notes",""].map(h => (
-                    <th key={h} style={{ padding: "6px 10px", textAlign: "left", fontFamily: MONO, fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: .5, fontWeight: 700 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {scores.map((s, i) => {
-                  const pct = s.maxScore ? Math.round(s.score / s.maxScore * 100) : null;
-                  const col = pct !== null ? (pct >= 80 ? C.green : pct >= 60 ? C.amber : C.coral) : C.muted;
-                  return (
-                    <tr key={s.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? C.bg : C.surface }}>
-                      <td style={{ padding: "8px 10px", fontFamily: MONO, fontWeight: 700 }}>{s.year}</td>
-                      <td style={{ padding: "8px 10px" }}>{s.term}</td>
-                      <td style={{ padding: "8px 10px", fontFamily: MONO, fontWeight: 700, color: C.forest }}>{s.score}</td>
-                      <td style={{ padding: "8px 10px", color: C.muted }}>{s.maxScore}</td>
-                      <td style={{ padding: "8px 10px", fontFamily: MONO, fontWeight: 700, color: col }}>{pct !== null ? `${pct}%` : "—"}</td>
-                      <td style={{ padding: "8px 10px", color: C.textDim, fontSize: 12 }}>{s.notes || "—"}</td>
-                      <td style={{ padding: "8px 10px" }}>
-                        <button onClick={() => removeScore(s.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14, padding: 2 }} title="Remove">×</button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ── Eiken History Section ─────────────────────────────────────────────────────
-function EikenSection({ studentName, initialData, onSave }) {
-  const [history,  setHistory]  = useState(initialData?.eikenHistory || []);
-  const [adding,   setAdding]   = useState(false);
-  const [saving,   setSaving]   = useState(false);
-  // Form
-  const [level,    setLevel]    = useState(EIKEN_LEVELS[2]);
-  const [year,     setYear]     = useState(String(CURRENT_YEAR));
-  const [session,  setSession]  = useState(EIKEN_SESSIONS[0]);
-  const [stage,    setStage]    = useState("Primary"); // Primary | Secondary
-  const [result,   setResult]   = useState("Pass");
-  const [sectionScores, setSectionScores] = useState({});
-
-  const criteria     = EIKEN_CRITERIA[level];
-  const stageData    = stage === "Primary" ? criteria?.primary : criteria?.secondary;
-  const hasSecondary = !!criteria?.secondary;
-
-  const updateSectionScore = (name, val) => setSectionScores(prev => ({ ...prev, [name]: val }));
-
-  const totalEntered = stageData?.sections.reduce((s, sec) => s + (Number(sectionScores[sec.name]) || 0), 0) || 0;
-  const passScore    = stageData?.pass || 0;
-  const autoResult   = stageData ? (totalEntered >= passScore ? "Pass" : "Fail") : result;
-
-  const addEntry = async () => {
-    const sections = stageData?.sections.map(sec => ({
-      name:  sec.name,
-      score: Number(sectionScores[sec.name]) || 0,
-      max:   sec.max,
-    })) || [];
-    const totalScore = sections.reduce((s, x) => s + x.score, 0);
-    const newEntry = {
-      id: Date.now(), level, year, session, stage,
-      result: stageData ? autoResult : result,
-      totalScore, passScore: stageData?.pass || 0,
-      sections, date: todayStr(),
-    };
-    const updated = [...history, newEntry].sort((a, b) => {
-      const aKey = `${a.year}${EIKEN_SESSIONS.indexOf(a.session)}`;
-      const bKey = `${b.year}${EIKEN_SESSIONS.indexOf(b.session)}`;
-      return bKey.localeCompare(aKey);
-    });
-    setSaving(true);
-    await onSave({ eikenHistory: updated });
-    setHistory(updated);
-    setSaving(false);
-    setAdding(false);
-    setSectionScores({});
-  };
-
-  const removeEntry = async (id) => {
-    const updated = history.filter(e => e.id !== id);
-    await onSave({ eikenHistory: updated });
-    setHistory(updated);
-  };
-
-  // Latest level
-  const latestPass = history.filter(e => e.result === "Pass").sort((a, b) => {
-    return EIKEN_LEVELS.indexOf(b.level) - EIKEN_LEVELS.indexOf(a.level);
-  })[0];
-
-  return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-        <div>
-          <p style={{ fontFamily: MONO, fontSize: 11, color: C.amber, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
-            🏆 Eiken History
-          </p>
-          {latestPass && (
-            <p style={{ fontSize: 13, color: C.textDim, marginTop: 4 }}>
-              Current level: <strong style={{ color: C.forest }}>{latestPass.level} ({EIKEN_GRADE_EN[latestPass.level]})</strong>
-            </p>
-          )}
-        </div>
-        <Btn variant="ghost" small onClick={() => setAdding(!adding)}>
-          {adding ? "Cancel" : "+ Add Eiken"}
-        </Btn>
-      </div>
-
-      {/* Add form */}
-      {adding && (
-        <div style={{ background: C.bg, borderRadius: 10, padding: 14, marginBottom: 16, display: "grid", gap: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-            <div>
-              <FieldLabel>Level</FieldLabel>
-              <select value={level} onChange={e => { setLevel(e.target.value); setSectionScores({}); }} style={{ width:"100%", background:C.surface, border:`1.5px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:13, color:C.text, outline:"none" }}>
-                {EIKEN_LEVELS.map(l => <option key={l} value={l}>{l} — {EIKEN_GRADE_EN[l]}</option>)}
-              </select>
-            </div>
-            <div>
-              <FieldLabel>Year</FieldLabel>
-              <select value={year} onChange={e => setYear(e.target.value)} style={{ width:"100%", background:C.surface, border:`1.5px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:13, color:C.text, outline:"none" }}>
-                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-            <div>
-              <FieldLabel>Session</FieldLabel>
-              <select value={session} onChange={e => setSession(e.target.value)} style={{ width:"100%", background:C.surface, border:`1.5px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:13, color:C.text, outline:"none" }}>
-                {EIKEN_SESSIONS.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {hasSecondary && (
-            <div>
-              <FieldLabel>Stage</FieldLabel>
-              <div style={{ display: "flex", gap: 8 }}>
-                {["Primary","Secondary"].map(s => (
-                  <button key={s} onClick={() => { setStage(s); setSectionScores({}); }} style={{
-                    padding: "6px 16px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                    border: `1.5px solid ${stage === s ? C.forest : C.border}`,
-                    background: stage === s ? C.forest : "transparent",
-                    color: stage === s ? C.white : C.muted,
-                  }}>{s}</button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Section scores */}
-          {stageData && (
-            <div>
-              <FieldLabel>Section Scores</FieldLabel>
-              <div style={{ display: "grid", gap: 8 }}>
-                {stageData.sections.map(sec => (
-                  <div key={sec.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 13, color: C.textDim, flex: 1 }}>{sec.name}</span>
-                    <input
-                      type="number" min="0" max={sec.max}
-                      value={sectionScores[sec.name] || ""}
-                      onChange={e => updateSectionScore(sec.name, e.target.value)}
-                      placeholder="0"
-                      style={{ width: 80, background:C.surface, border:`1.5px solid ${C.border}`, borderRadius:7, padding:"6px 10px", fontSize:13, color:C.text, outline:"none", textAlign:"right" }}
-                    />
-                    <span style={{ fontSize: 11, color: C.muted, minWidth: 52 }}>/ {sec.max}</span>
-                  </div>
-                ))}
-                {/* Total vs pass */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.surface, borderRadius: 8, marginTop: 4 }}>
-                  <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>Total</span>
-                  <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 15, color: totalEntered >= passScore ? C.green : C.coral }}>
-                    {totalEntered}
-                  </span>
-                  <span style={{ fontSize: 11, color: C.muted }}>/ {stageData.total} &nbsp;(Pass: {passScore})</span>
-                </div>
-                <div style={{ padding: "8px 12px", borderRadius: 8, background: autoResult === "Pass" ? C.greenBg : C.coralBg, textAlign: "center" }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: autoResult === "Pass" ? C.green : C.coral }}>
-                    {autoResult === "Pass" ? "✓ Pass" : "✗ Not passed"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!stageData && (
-            <div>
-              <FieldLabel>Result</FieldLabel>
-              <div style={{ display: "flex", gap: 8 }}>
-                {["Pass","Fail"].map(r => (
-                  <button key={r} onClick={() => setResult(r)} style={{
-                    flex: 1, padding: "8px", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                    border: `1.5px solid ${result === r ? (r === "Pass" ? C.green : C.coral) : C.border}`,
-                    background: result === r ? (r === "Pass" ? C.greenBg : C.coralBg) : "transparent",
-                    color: result === r ? (r === "Pass" ? C.green : C.coral) : C.muted,
-                  }}>{r === "Pass" ? "✓ Pass" : "✗ Fail"}</button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <Btn variant="primary" small onClick={addEntry} disabled={saving}>
-              {saving ? "Saving…" : "Save Eiken Record"}
-            </Btn>
-          </div>
-        </div>
-      )}
-
-      {history.length === 0 ? (
-        <p style={{ fontSize: 13, color: C.muted, textAlign: "center", padding: "20px 0" }}>No Eiken records yet.</p>
-      ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: `2px solid ${C.border}` }}>
-                {["Level","Year","Session","Stage","Score","Pass mark","Result","Sections"].map(h => (
-                  <th key={h} style={{ padding: "6px 10px", textAlign: "left", fontFamily: MONO, fontSize: 10, color: C.muted, textTransform: "uppercase", letterSpacing: .5, fontWeight: 700, whiteSpace: "nowrap" }}>{h}</th>
-                ))}
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((e, i) => (
-                <tr key={e.id} style={{ borderBottom: `1px solid ${C.border}`, background: i % 2 === 0 ? C.bg : C.surface }}>
-                  <td style={{ padding: "8px 10px", fontWeight: 700, color: C.forest, whiteSpace: "nowrap" }}>{e.level}</td>
-                  <td style={{ padding: "8px 10px", fontFamily: MONO }}>{e.year}</td>
-                  <td style={{ padding: "8px 10px", fontSize: 12, color: C.textDim, whiteSpace: "nowrap" }}>{e.session.split(" ")[0]} {e.session.match(/\((.+)\)/)?.[1]}</td>
-                  <td style={{ padding: "8px 10px", fontSize: 12, color: C.textDim }}>{e.stage}</td>
-                  <td style={{ padding: "8px 10px", fontFamily: MONO, fontWeight: 700 }}>{e.totalScore || "—"}</td>
-                  <td style={{ padding: "8px 10px", fontFamily: MONO, color: C.muted }}>{e.passScore || "—"}</td>
-                  <td style={{ padding: "8px 10px" }}>
-                    <span style={{ fontWeight: 700, color: e.result === "Pass" ? C.green : C.coral }}>
-                      {e.result === "Pass" ? "✓ Pass" : "✗ Fail"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "8px 10px", fontSize: 11, color: C.muted }}>
-                    {e.sections?.map(s => `${s.name}: ${s.score}`).join(" · ") || "—"}
-                  </td>
-                  <td style={{ padding: "8px 10px" }}>
-                    <button onClick={() => removeEntry(e.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14, padding: 2 }} title="Remove">×</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Student Detail View (full profile page) ───────────────────────────────────
-function StudentDetailView({ profile, allRecords, onBack }) {
-  const attended = profile.classes - profile.absent;
-  const attPct   = profile.classes > 0 ? Math.round(attended / profile.classes * 100) : 0;
-  const posPct   = attended > 0 ? Math.round(profile.positive / attended * 100) : 0;
-  const negPct   = attended > 0 ? Math.round(profile.negative / attended * 100) : 0;
-  const neuPct   = attended > 0 ? Math.round((attended - profile.positive - profile.negative - profile.flag) / attended * 100) : 0;
-  const barColor = posPct >= 60 ? C.green : posPct >= 30 ? C.amber : C.coral;
-  const health   = computeStudentHealth(profile);
-
-  const [studentRecord, setStudentRecord] = useState(null);
-  const [recordLoading, setRecordLoading] = useState(true);
-
-  useEffect(() => {
-    setRecordLoading(true);
-    loadStudentRecord(profile.name).then(data => {
-      setStudentRecord(data);
-      setRecordLoading(false);
-    }).catch(() => {
-      setStudentRecord({ testScores: [], eikenHistory: [], parentComments: [], referrals: [], onboarding: null });
-      setRecordLoading(false);
-    });
-  }, [profile.name]);
-
-  // Merge partial saves (each section saves independently of the others)
-  const handleRecordSave = async (partial) => {
-    const merged = { ...studentRecord, ...partial };
-    await saveStudentRecord(profile.name, merged);
-    setStudentRecord(merged);
-  };
-
-  // Mark distribution pie
-  const markData = [
-    { label: "Positive", value: profile.positive, color: C.green  },
-    { label: "Neutral",  value: attended - profile.positive - profile.negative - profile.flag, color: "#CBD5E1" },
-    { label: "Concern",  value: profile.negative, color: C.coral  },
-    { label: "Flag",     value: profile.flag,     color: C.amber  },
-  ];
-
-  // Per-class breakdown for this student
-  const classStats = [...profile.classNames].map(cn => {
-    const recs = allRecords.filter(r => r.className === cn && r.studentNames.includes(profile.name));
-    const pos = recs.filter(r => (r.report?.marks?.[profile.name] || "none") === "positive").length;
-    const neg = recs.filter(r => (r.report?.marks?.[profile.name] || "none") === "negative").length;
-    const fl  = recs.filter(r => (r.report?.marks?.[profile.name] || "none") === "flag").length;
-    const abs = recs.filter(r => (r.report?.marks?.[profile.name] || "none") === "absent").length;
-    const att = recs.length - abs;
-    return { cn, total: recs.length, pos, neg, fl, abs, att };
-  });
-
-  // Chronological log entries for this student
-  const log = allRecords
-    .filter(r => r.studentNames.includes(profile.name))
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .map(r => ({
-      date:      r.date,
-      className: r.className,
-      mark:      r.report?.marks?.[profile.name] || "none",
-      note:      r.report?.note || "",
-      mood:      r.report?.mood || "",
-      engagement:r.report?.engagement || "",
-      feedbackSent: r.report?.feedbackSent || false,
-    }));
-
-  const fmtDateShort = (d) => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-
-  const markIcon = { positive:"✓", negative:"✗", flag:"🚩", absent:"○", none:"—" };
-  const markCol  = { positive: C.green, negative: C.coral, flag: C.amber, absent: C.muted, none: C.border };
-  const markBg   = { positive: C.greenBg, negative: C.coralBg, flag: C.amberBg, absent: "#F3F4F6", none: C.bg };
-
-  return (
-    <div className="fade-in">
-      {/* Back button */}
-      <button onClick={onBack} style={{
-        background: "none", border: "none", cursor: "pointer", color: C.muted,
-        fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, marginBottom: 20,
-      }}>← All Students</button>
-
-      {/* Header */}
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "20px 22px", marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-          <div>
-            <h2 style={{ fontFamily: SERIF, fontSize: 26, color: C.forest }}>{profile.name}</h2>
-            <p style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{[...profile.classNames].join(" · ")}</p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, textAlign: "center" }}>
-            <div style={{ background: C.bg, borderRadius: 9, padding: "10px 16px" }}>
-              <p style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: C.forest }}>{attPct}%</p>
-              <p style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>Attendance</p>
-            </div>
-            <div style={{ background: C.bg, borderRadius: 9, padding: "10px 16px" }}>
-              <p style={{ fontFamily: MONO, fontSize: 22, fontWeight: 700, color: barColor }}>{posPct}%</p>
-              <p style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>Positive rate</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Health banner */}
-        <div style={{
-          display: "flex", gap: 12, alignItems: "flex-start", padding: "11px 14px",
-          background: health.bg, borderRadius: 9, border: `1.5px solid ${health.color}`, marginBottom: 14,
-        }}>
-          <span style={{ fontWeight: 800, color: health.color, fontSize: 13, whiteSpace: "nowrap" }}>
-            {HEALTH_ICON[health.level]} {health.label}
-          </span>
-          <span style={{ fontSize: 12, color: C.textMid, lineHeight: 1.5 }}>{health.reasons.join(" · ")}</span>
-        </div>
-
-        {/* Progress bar */}
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ height: 8, background: C.border, borderRadius: 99, overflow: "hidden", display: "flex" }}>
-            <div style={{ width: `${posPct}%`, background: C.green, transition: "width .4s" }} />
-            <div style={{ width: `${neuPct}%`, background: "#CBD5E1" }} />
-            <div style={{ width: `${negPct}%`, background: C.coral }} />
-          </div>
-          <div style={{ display: "flex", gap: 16, marginTop: 6, fontSize: 11, flexWrap: "wrap" }}>
-            <span style={{ color: C.green }}>✓ {profile.positive} positive</span>
-            <span style={{ color: C.muted }}>{attended - profile.positive - profile.negative - profile.flag} neutral</span>
-            <span style={{ color: C.coral }}>✗ {profile.negative} concern</span>
-            <span style={{ color: C.amber }}>🚩 {profile.flag} flag</span>
-            <span style={{ color: C.muted }}>○ {profile.absent} absent</span>
-            <span style={{ color: C.muted, marginLeft: "auto" }}>{profile.classes} total logged</span>
-          </div>
-        </div>
-
-        {/* Mark distribution pie */}
-        {attended > 0 && (
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <PieChart data={markData} size={90} />
-            <div style={{ display: "grid", gap: 5 }}>
-              {markData.filter(d => d.value > 0).map(d => (
-                <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 9, height: 9, borderRadius: 2, background: d.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: C.textDim, minWidth: 56 }}>{d.label}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: C.text, fontFamily: MONO }}>{d.value}</span>
-                  <span style={{ fontSize: 11, color: C.muted, fontFamily: MONO }}>
-                    {Math.round(d.value / attended * 100)}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Per-class breakdown */}
-      {classStats.length > 1 && (
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
-          <p style={{ fontFamily: MONO, fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, marginBottom: 14 }}>By Class</p>
-          <div style={{ display: "grid", gap: 8 }}>
-            {classStats.map(cs => {
-              const p = cs.att > 0 ? Math.round(cs.pos / cs.att * 100) : 0;
-              return (
-                <div key={cs.cn} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: C.bg, borderRadius: 8 }}>
-                  <span style={{ fontWeight: 600, fontSize: 13, color: C.forest, flex: 1 }}>{cs.cn}</span>
-                  <div style={{ display: "flex", gap: 10, fontSize: 11 }}>
-                    <span style={{ color: C.green, fontWeight: 700 }}>✓ {cs.pos}</span>
-                    <span style={{ color: C.coral, fontWeight: 700 }}>✗ {cs.neg}</span>
-                    {cs.fl  > 0 && <span style={{ color: C.amber, fontWeight: 700 }}>🚩 {cs.fl}</span>}
-                    {cs.abs > 0 && <span style={{ color: C.muted, fontWeight: 700 }}>○ {cs.abs}</span>}
-                  </div>
-                  <div style={{ width: 60, height: 5, background: C.border, borderRadius: 99, overflow: "hidden" }}>
-                    <div style={{ width: `${p}%`, height: "100%", background: p >= 60 ? C.green : p >= 30 ? C.amber : C.coral }} />
-                  </div>
-                  <span style={{ fontFamily: MONO, fontSize: 11, color: C.textDim, minWidth: 30, textAlign: "right" }}>{p}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Teacher notes mentioning this student */}
-      {profile.mentions.length > 0 && (
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, marginBottom: 20 }}>
-          <p style={{ fontFamily: MONO, fontSize: 11, color: C.purple, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, marginBottom: 14 }}>
-            💬 Teacher Notes Mentioning {profile.name}
-          </p>
-          <div style={{ display: "grid", gap: 10 }}>
-            {profile.mentions.map((m, i) => {
-              const markIcon2 = { positive:"✓", negative:"✗", flag:"🚩", absent:"○", none:"—" }[m.mark] || "—";
-              const markCol2  = { positive: C.green, negative: C.coral, flag: C.amber, absent: C.muted, none: C.muted }[m.mark] || C.muted;
-              return (
-                <div key={i} style={{ padding: "12px 14px", background: C.purpleBg, borderRadius: 9, borderLeft: `3px solid ${C.purple}` }}>
-                  {/* Header row */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: C.purple }}>{m.className}</span>
-                    <span style={{ fontSize: 11, color: C.muted, fontFamily: MONO }}>
-                      {m.feedbackSent && <span style={{ color: C.blue, fontWeight: 700, marginRight: 6 }} title="Feedback sent to parents">✉ sent</span>}
-                      {fmtDateShort(m.date)}
-                    </span>
-                  </div>
-                  {/* Class ratings row */}
-                  <div style={{ display: "flex", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-                    {m.mood && (
-                      <span style={{ fontSize: 11, background: C.surface, borderRadius: 6, padding: "2px 8px", color: C.textDim }}>
-                        {m.mood.split(" ")[0]} {m.mood.replace(/^[^\s]+\s/, "")}
-                      </span>
-                    )}
-                    {m.engagement && (
-                      <span style={{ fontSize: 11, background: C.surface, borderRadius: 6, padding: "2px 8px", color: C.textDim }}>
-                        {m.engagement.split(" ")[0]} {m.engagement.replace(/^[^\s]+\s/, "")}
-                      </span>
-                    )}
-                    {m.performance && (
-                      <span style={{ fontSize: 11, background: C.surface, borderRadius: 6, padding: "2px 8px", color: C.textDim }}>
-                        {m.performance.split(" ")[0]} {m.performance.replace(/^[^\s]+\s/, "")}
-                      </span>
-                    )}
-                    {/* Student's own mark that day */}
-                    <span style={{ fontSize: 11, fontWeight: 700, color: markCol2, background: C.surface, borderRadius: 6, padding: "2px 8px" }}>
-                      {markIcon2} {m.mark === "none" ? "No mark" : m.mark}
-                    </span>
-                  </div>
-                  {/* The note itself */}
-                  <p style={{ fontSize: 13, color: C.text, lineHeight: 1.6 }}>{m.note}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* CS sections: onboarding, comments, referrals + scores */}
-      {recordLoading ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 20, background: C.surface, borderRadius: 12, marginBottom: 20 }}>
-          <div className="spin" style={{ width: 20, height: 20, border: `2px solid ${C.border}`, borderTopColor: C.forest, borderRadius: "50%" }} />
-          <span style={{ fontSize: 13, color: C.muted }}>Loading records…</span>
-        </div>
-      ) : (
-        <>
-          <OnboardingSection
-            initialData={studentRecord}
-            onSave={handleRecordSave}
-          />
-          <ParentCommentsSection
-            initialData={studentRecord}
-            onSave={handleRecordSave}
-          />
-          <ReferralsSection
-            initialData={studentRecord}
-            onSave={handleRecordSave}
-          />
-          <TestScoresSection
-            studentName={profile.name}
-            initialData={studentRecord}
-            onSave={handleRecordSave}
-          />
-          <EikenSection
-            studentName={profile.name}
-            initialData={studentRecord}
-            onSave={handleRecordSave}
-          />
-        </>
-      )}
-
-      {/* Full chronological log */}
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18 }}>
-        <p style={{ fontFamily: MONO, fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, marginBottom: 14 }}>
-          Lesson History ({log.length})
-        </p>
-        {log.length === 0 ? (
-          <p style={{ fontSize: 13, color: C.muted }}>No lessons logged yet.</p>
-        ) : (
-          <div style={{ display: "grid", gap: 8 }}>
-            {log.map((entry, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 12px",
-                background: markBg[entry.mark] || C.bg, borderRadius: 8,
-                border: `1px solid ${(markCol[entry.mark] || C.border)}22`,
-              }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: 7, flexShrink: 0,
-                  background: markCol[entry.mark] || C.border,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 13, fontWeight: 700, color: C.white,
-                }}>{markIcon[entry.mark] || "—"}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: entry.note ? 4 : 0 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: C.forest }}>{entry.className}</span>
-                    <span style={{ fontSize: 11, color: C.muted, fontFamily: MONO, flexShrink: 0, marginLeft: 8 }}>
-                      {entry.feedbackSent && <span style={{ color: C.blue, fontWeight: 700, marginRight: 6 }} title="Feedback sent">✉</span>}
-                      {fmtDateShort(entry.date)}
-                    </span>
-                  </div>
-                  {entry.note && (
-                    <p style={{ fontSize: 12, color: C.textDim, lineHeight: 1.5, fontStyle: "italic" }}>"{entry.note}"</p>
-                  )}
-                  {(entry.mood || entry.engagement) && (
-                    <p style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>
-                      {entry.mood.split(" ")[0]} {entry.engagement.split(" ")[0]}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Analytics View ────────────────────────────────────────────────────────────
-function AnalyticsView({ weekTemplates, onClose }) {
-  const [loading,     setLoading]     = useState(true);
-  const [records,     setRecords]     = useState([]);
-  const [rangeMode,   setRangeMode]   = useState("week");
-  const [rangeOffset, setRangeOffset] = useState(0);
-  const [filterType,  setFilterType]  = useState("All");
-  const [filterClass, setFilterClass] = useState("All");
-  const [activeTab,   setActiveTab]   = useState("overview");
-  const [searchName,  setSearchName]  = useState("");
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [markFilter,  setMarkFilter]  = useState("All"); // All | positive | negative | flag | absent | mentions | health-red | health-yellow
-  const [sortBy,      setSortBy]      = useState("auto"); // auto | health | name | attendance | positive | classes
-
-  const range = rangeMode === "week" ? isoWeekRange(rangeOffset)
-              : rangeMode === "month" ? monthRange(rangeOffset)
-              : { from: null, to: null, label: "All Time" };
-
-  useEffect(() => {
-    setLoading(true);
-    const loader = rangeMode === "overall" ? loadAllReportsEver() : loadReportsInRange(range.from, range.to);
-    loader.then(rows => {
-      setRecords(buildAnalyticsRecords(rows, weekTemplates));
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [rangeMode, range.from, range.to]);
-
-  const filtered = records.filter(r => {
-    if (filterType  !== "All" && r.classType !== filterType)  return false;
-    if (filterClass !== "All" && r.className !== filterClass) return false;
-    return true;
-  });
-
-  const allClassNames = [...new Set(records.map(r => r.className))].sort();
-
-  const makePieData = (recs, field, options, colors) =>
-    options.map((o, i) => ({ label: o, value: aggregateCounts(recs, field, options)[o], color: colors[i] }));
-
-  const PIE_COLORS = ["#059669","#34D399","#FCD34D","#F97316","#EF4444"];
-  const PERF_COLORS = ["#059669","#34D399","#FCD34D","#F97316","#6B7280"];
-
-  const moodData = makePieData(filtered, "mood",        MOODS,       PIE_COLORS);
-  const engData  = makePieData(filtered, "engagement",  ENGAGEMENT,  PIE_COLORS);
-  const perfData = makePieData(filtered, "performance", PERFORMANCE, PERF_COLORS);
-
-  const classBreakdown = allClassNames.map(cn => {
-    const recs = filtered.filter(r => r.className === cn);
-    const allMarks = recs.flatMap(r => Object.values(r.report?.marks || {}));
-    return {
-      className: cn, classType: recs[0]?.classType || "Other", count: recs.length,
-      pos: allMarks.filter(m => m === "positive").length,
-      neg: allMarks.filter(m => m === "negative").length,
-      fl:  allMarks.filter(m => m === "flag").length,
-      abs: allMarks.filter(m => m === "absent").length,
-      total: allMarks.length,
-      recs,
-    };
-  }).filter(c => c.count > 0);
-
-  const students = buildStudentProfiles(filtered);
-  let filteredStudents = students.filter(s => {
-    if (searchName && !s.name.toLowerCase().includes(searchName.toLowerCase())) return false;
-    if (markFilter === "positive")      return s.positive > 0;
-    if (markFilter === "negative")      return s.negative > 0;
-    if (markFilter === "flag")          return s.flag > 0;
-    if (markFilter === "absent")        return s.absent > 0;
-    if (markFilter === "mentions")      return s.mentions.length > 0;
-    if (markFilter === "health-red")    return computeStudentHealth(s).level === "red";
-    if (markFilter === "health-yellow") return computeStudentHealth(s).level === "yellow";
-    return true;
-  });
-
-  // Sorting. "auto" keeps the original behavior: alphabetical by default, and
-  // most → least on whichever mark filter is active. Explicit sort options
-  // override the filter-driven sort.
-  const sortFieldByFilter = {
-    positive: "positive",
-    negative: "negative",
-    flag:     "flag",
-    absent:   "absent",
-  };
-  const healthRankOf = (s) => HEALTH_RANK[computeStudentHealth(s).level];
-  const attRateOf    = (s) => s.classes > 0 ? (s.classes - s.absent) / s.classes : 1;
-  const posRateOf    = (s) => { const at = s.classes - s.absent; return at > 0 ? s.positive / at : 0; };
-
-  if (sortBy === "auto") {
-    if (markFilter === "mentions") {
-      filteredStudents = [...filteredStudents].sort((a, b) => b.mentions.length - a.mentions.length);
-    } else if (markFilter === "health-red" || markFilter === "health-yellow") {
-      filteredStudents = [...filteredStudents].sort((a, b) => healthRankOf(a) - healthRankOf(b));
-    } else if (sortFieldByFilter[markFilter]) {
-      const field = sortFieldByFilter[markFilter];
-      filteredStudents = [...filteredStudents].sort((a, b) => b[field] - a[field]);
+        const url = CONFIG.STUDENT_API
+          + '?mode=students&userId=' + encodeURIComponent(lineUserId)
+          + '&secret=' + encodeURIComponent(CONFIG.API_SECRET);
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.students || data.students.length === 0) {
+          showError('このLINEアカウントに紐づく生徒が見つかりません。');
+          return;
+        }
+
+        // Filter out adult students
+        studentList = data.students.filter(s => !s.isAdult);
+
+        if (studentList.length === 0) {
+          showError('お子様の登録がありません。\n大人レッスンの方は別メニューをご利用ください。');
+          return;
+        }
+
+        // Skip picker if only one student
+        if (studentList.length === 1) {
+          selectStudent(0);
+        } else {
+          renderStudentPicker();
+          showScreen('studentScreen');
+        }
+
+      } catch (err) {
+        console.error('Failed to load students:', err);
+        showError('生徒情報の読み込みに失敗しました。');
+      }
     }
-  } else if (sortBy === "health") {
-    filteredStudents = [...filteredStudents].sort((a, b) => healthRankOf(a) - healthRankOf(b));
-  } else if (sortBy === "name") {
-    filteredStudents = [...filteredStudents].sort((a, b) => a.name.localeCompare(b.name));
-  } else if (sortBy === "attendance") {
-    filteredStudents = [...filteredStudents].sort((a, b) => attRateOf(a) - attRateOf(b));
-  } else if (sortBy === "positive") {
-    filteredStudents = [...filteredStudents].sort((a, b) => posRateOf(b) - posRateOf(a));
-  } else if (sortBy === "classes") {
-    filteredStudents = [...filteredStudents].sort((a, b) => b.classes - a.classes);
-  }
 
-  const Tab = ({ id, label }) => (
-    <button onClick={() => { setActiveTab(id); setSelectedStudent(null); }} style={{
-      padding: "7px 16px", borderRadius: 8, border: "none",
-      background: activeTab === id ? C.forest : "transparent",
-      color: activeTab === id ? C.white : C.textDim,
-      fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "all .15s",
-    }}>{label}</button>
-  );
+    function renderStudentPicker() {
+      const list = document.getElementById('studentList');
+      list.innerHTML = '';
+      studentList.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'student-card';
+        div.onclick = () => selectStudent(i);
+        div.innerHTML =
+          '<div class="sc-avatar">👤</div>' +
+          '<div class="sc-info">' +
+            '<div class="sc-name">' + s.name + '</div>' +
+            '<div class="sc-class">' + (s.className || 'クラス未設定') +
+              (s.regularDay && s.regularTime ? ' ・ ' + s.regularDay + '曜 ' + s.regularTime : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="sc-arrow">›</div>';
+        list.appendChild(div);
+      });
+    }
 
-  return (
-    <div className="fade-in" style={{ position: "fixed", inset: 0, background: C.bg, zIndex: 2000, overflowY: "auto" }}>
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px 56px" }}>
+    function selectStudent(idx) {
+      currentStudent = studentList[idx];
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-          marginBottom: 24, paddingBottom: 20, borderBottom: `1.5px solid ${C.border}` }}>
-          <div>
-            <p style={{ fontFamily: MONO, fontSize: 10, color: C.purple, letterSpacing: 2, fontWeight: 700, marginBottom: 4 }}>ANALYTICS</p>
-            <h1 style={{ fontFamily: SERIF, fontSize: 26, color: C.forest }}>
-              KANA <span style={{ color: C.amber, fontStyle: "italic" }}>Reports</span>
-            </h1>
-          </div>
-          <Btn variant="ghost" small onClick={onClose}>← Back to Log</Btn>
-        </div>
-
-        <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 9, overflow: "hidden" }}>
-            {["week","month","overall"].map(m => (
-              <button key={m} onClick={() => { setRangeMode(m); setRangeOffset(0); }} style={{
-                padding: "6px 16px", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
-                background: rangeMode === m ? C.forest : "transparent",
-                color: rangeMode === m ? C.white : C.textDim, transition: "all .15s",
-              }}>{m === "week" ? "Weekly" : m === "month" ? "Monthly" : "Overall"}</button>
-            ))}
-          </div>
-          {rangeMode !== "overall" && (
-            <>
-              <button onClick={() => setRangeOffset(o => o - 1)} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 7, padding: "6px 12px", cursor: "pointer", fontSize: 16, color: C.text }}>‹</button>
-              <span style={{ fontFamily: SERIF, fontSize: 16, color: C.forest, minWidth: 160, textAlign: "center" }}>{range.label}</span>
-              <button onClick={() => setRangeOffset(o => Math.min(o + 1, 0))} disabled={rangeOffset >= 0}
-                style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 7, padding: "6px 12px", cursor: "pointer", fontSize: 16, color: C.text, opacity: rangeOffset >= 0 ? .4 : 1 }}>›</button>
-            </>
-          )}
-          {rangeMode === "overall" && (
-            <span style={{ fontFamily: SERIF, fontSize: 16, color: C.forest, minWidth: 160, textAlign: "center" }}>
-              {range.label} <span style={{ fontFamily: MONO, fontSize: 11, color: C.muted }}>— since you started logging</span>
-            </span>
-          )}
-          <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 7, padding: "6px 10px", fontSize: 13, color: C.text, cursor: "pointer" }}>
-            <option value="All">All class types</option>
-            {CLASS_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <select value={filterClass} onChange={e => setFilterClass(e.target.value)} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 7, padding: "6px 10px", fontSize: 13, color: C.text, cursor: "pointer" }}>
-            <option value="All">All classes</option>
-            {allClassNames.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10, marginBottom: 24 }}>
-          {[
-            { label: "Classes logged", value: filtered.length, col: C.forest },
-            { label: "Total students", value: [...new Set(filtered.flatMap(r => r.studentNames))].length, col: C.purple },
-            { label: "Absences",       value: filtered.flatMap(r => Object.values(r.report?.marks || {})).filter(m => m === "absent").length, col: C.coral },
-            { label: "Positive marks", value: filtered.flatMap(r => Object.values(r.report?.marks || {})).filter(m => m === "positive").length, col: C.green },
-            { label: "Flags",          value: filtered.flatMap(r => Object.values(r.report?.marks || {})).filter(m => m === "flag").length, col: C.amber },
-            { label: "Feedback sent",  value: filtered.filter(r => r.report?.feedbackSent).length, col: C.blue },
-          ].map(s => (
-            <div key={s.label} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", textAlign: "center" }}>
-              <p style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 700, color: s.col }}>{s.value}</p>
-              <p style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", gap: 4, marginBottom: 20, background: C.surface, padding: 5, borderRadius: 10, border: `1px solid ${C.border}`, width: "fit-content" }}>
-          <Tab id="overview" label="Overview" />
-          <Tab id="classes"  label="By Class" />
-          <Tab id="students" label="Students" />
-        </div>
-
-        {loading ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 60, gap: 12 }}>
-            <div className="spin" style={{ width: 28, height: 28, border: `3px solid ${C.border}`, borderTopColor: C.forest, borderRadius: "50%" }} />
-            <span style={{ fontFamily: MONO, fontSize: 13, color: C.muted }}>Loading data…</span>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 60 }}>
-            <p style={{ fontFamily: SERIF, fontSize: 20, color: C.muted, marginBottom: 8 }}>No data yet</p>
-            <p style={{ fontSize: 13, color: C.muted }}>Log some classes to see analytics here.</p>
-          </div>
-        ) : (
-          <>
-            {activeTab === "overview" && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-                <MetricPie title="Class Mood"         data={moodData} />
-                <MetricPie title="Student Engagement" data={engData}  />
-                <MetricPie title="Lesson Performance" data={perfData} />
-              </div>
-            )}
-
-            {activeTab === "classes" && (
-              <div style={{ display: "grid", gap: 12 }}>
-                {classBreakdown.map(c => {
-                  const cMood = makePieData(c.recs, "mood",        MOODS,       PIE_COLORS);
-                  const cEng  = makePieData(c.recs, "engagement",  ENGAGEMENT,  PIE_COLORS);
-                  const cPerf = makePieData(c.recs, "performance", PERFORMANCE, PERF_COLORS);
-                  const posPct = c.total > 0 ? Math.round(c.pos / c.total * 100) : 0;
-                  return (
-                    <div key={c.className} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, borderLeft: `4px solid ${C.amber}` }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                        <div>
-                          <h3 style={{ fontFamily: SERIF, fontSize: 18, color: C.forest }}>{c.className}</h3>
-                          <p style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>{c.count} session{c.count !== 1 ? "s" : ""} · {c.classType}</p>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <p style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: posPct >= 60 ? C.green : posPct >= 30 ? C.amber : C.coral }}>{posPct}%</p>
-                          <p style={{ fontSize: 10, color: C.muted }}>positive marks</p>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", gap: 12, marginBottom: 16, fontSize: 12 }}>
-                        <span style={{ color: C.green, fontWeight: 700 }}>✓ {c.pos}</span>
-                        <span style={{ color: C.coral, fontWeight: 700 }}>✗ {c.neg}</span>
-                        <span style={{ color: C.amber, fontWeight: 700 }}>🚩 {c.fl}</span>
-                        <span style={{ color: C.muted, fontWeight: 700 }}>○ {c.abs} absent</span>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                        {[{ title: "Mood", data: cMood }, { title: "Engagement", data: cEng }, { title: "Performance", data: cPerf }].map(({ title, data }) => (
-                          <div key={title}>
-                            <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: "uppercase", letterSpacing: .8, marginBottom: 8 }}>{title}</p>
-                            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                              <PieChart data={data} size={80} />
-                              <div style={{ display: "grid", gap: 3 }}>
-                                {data.filter(d => d.value > 0).map(d => {
-                                  const t = data.reduce((s, x) => s + x.value, 0);
-                                  return (
-                                    <div key={d.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                                      <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color }} />
-                                      <span style={{ fontSize: 10, color: C.muted }}>{t > 0 ? Math.round(d.value / t * 100) : 0}%</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {activeTab === "students" && (
-              <div>
-                {selectedStudent ? (
-                  <StudentDetailView
-                    profile={selectedStudent}
-                    allRecords={filtered}
-                    onBack={() => setSelectedStudent(null)}
-                  />
-                ) : (
-                  <>
-                    {/* Search + sort + mark filter */}
-                    <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                        <input value={searchName} onChange={e => setSearchName(e.target.value)}
-                          placeholder="Search student name…"
-                          style={{ width: "100%", maxWidth: 240, background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 14, color: C.text, outline: "none" }}
-                          onFocus={e => e.target.style.borderColor = C.forest}
-                          onBlur={e => e.target.style.borderColor = C.border} />
-                        <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                          style={{ background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "8px 10px", fontSize: 13, color: C.text, cursor: "pointer", outline: "none" }}>
-                          <option value="auto">Sort: Auto (follows filter)</option>
-                          <option value="health">Sort: Health — at-risk first</option>
-                          <option value="name">Sort: Name A–Z</option>
-                          <option value="attendance">Sort: Attendance — lowest first</option>
-                          <option value="positive">Sort: Positive % — highest first</option>
-                          <option value="classes">Sort: Most logged</option>
-                        </select>
-                        <span style={{ fontSize: 12, color: C.muted }}>
-                          {filteredStudents.length} student{filteredStudents.length !== 1 ? "s" : ""} · tap a card for full profile
-                        </span>
-                      </div>
-                      {/* Mark filter chips */}
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                        <span style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: .8, marginRight: 4 }}>Filter:</span>
-                        {[
-                          { id: "All",           label: "All",          bg: C.forest,  col: C.white  },
-                          { id: "health-red",    label: "🔴 At risk",   bg: C.coralBg, col: C.coral  },
-                          { id: "health-yellow", label: "🟡 Watch",     bg: C.amberBg, col: C.amber  },
-                          { id: "positive",      label: "✓ Positive",   bg: C.greenBg, col: C.green  },
-                          { id: "negative",      label: "✗ Concern",    bg: C.coralBg, col: C.coral  },
-                          { id: "flag",          label: "🚩 Flagged",   bg: C.amberBg, col: C.amber  },
-                          { id: "absent",        label: "○ Absent",     bg: "#F3F4F6", col: "#6B7280" },
-                          { id: "mentions",      label: "💬 Has notes", bg: C.purpleBg,col: C.purple },
-                        ].map(f => (
-                          <button key={f.id} onClick={() => setMarkFilter(f.id)} style={{
-                            padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 700,
-                            border: `1.5px solid ${markFilter === f.id ? f.col : C.border}`,
-                            background: markFilter === f.id ? f.bg : "transparent",
-                            color: markFilter === f.id ? f.col : C.muted,
-                            cursor: "pointer", transition: "all .15s",
-                          }}>{f.label}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
-                      {filteredStudents.length === 0 ? (
-                        <p style={{ fontSize: 13, color: C.muted, padding: 16 }}>No students match this filter.</p>
-                      ) : filteredStudents.map(p => (
-                        <StudentProfileCard key={p.name} profile={p} onClick={() => setSelectedStudent(p)} />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── MAIN APP ──────────────────────────────────────────────────────────────────
-function App() {
-  const [weekTemplates, setWeekTemplates] = useState(null);
-  const [dayReports,    setDayReports]    = useState({});
-  const [date,          setDate]          = useState(todayStr());
-  const [reportSlot,    setReportSlot]    = useState(null);
-  const [showTemplate,  setShowTemplate]  = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [appStatus,     setAppStatus]     = useState("loading");
-  const [syncStatus,    setSyncStatus]    = useState(null);
-  const [liveTime,      setLiveTime]      = useState(nowHHMM());
-
-  useEffect(() => {
-    const t = setInterval(() => setLiveTime(nowHHMM()), 30000);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const raw = await loadTemplates();
-        setWeekTemplates(migrateTemplates(raw));
-        setAppStatus("ready");
-      } catch (e) {
-        console.error("Failed to load templates:", e);
-        setWeekTemplates(buildWeekTemplates());
-        setAppStatus("error");
+      if (!currentStudent.regularDay || !currentStudent.regularTime) {
+        showError(currentStudent.name + 'さんの通常クラスが設定されていません。\nスタッフにご連絡ください。');
+        return;
       }
-    })();
-  }, []);
 
-  useEffect(() => {
-    if (appStatus !== "ready" && appStatus !== "error") return;
-    (async () => {
-      try {
-        const reports = await loadReportsForDate(date);
-        setDayReports(reports);
-      } catch (e) {
-        console.error("Failed to load reports:", e);
-        setDayReports({});
+      // Show student info banner
+      document.getElementById('studentInfoBanner').innerHTML =
+        '<strong>' + currentStudent.name + 'さん</strong>（' + currentStudent.className + '）' +
+        '<br>通常クラス: ' + currentStudent.regularDay + '曜日 ' + currentStudent.regularTime;
+
+      // Show auto-filled time
+      document.getElementById('autoTime').textContent = currentStudent.regularTime;
+
+      // Generate valid date list
+      generateDateList();
+
+      // Date info text
+      document.getElementById('dateInfoText').textContent =
+        '※ ' + currentStudent.regularDay + '曜日のみ選択できます。';
+
+      backToStudentPicker.lastWasFromForm = false;
+      showScreen('formScreen');
+    }
+
+    function backToStudentPicker() {
+      if (studentList.length === 1) return; // Only one student, no picker
+      currentStudent = null;
+      selectedDate = null;
+      showScreen('studentScreen');
+    }
+
+    function generateDateList() {
+      const list = document.getElementById('dateList');
+      list.innerHTML = '';
+
+      const targetDayIdx = DAY_NAMES.indexOf(currentStudent.regularDay);
+      if (targetDayIdx < 0) {
+        list.innerHTML = '<div class="empty-state">通常クラスの曜日が不正です。</div>';
+        return;
       }
-    })();
-  }, [date, appStatus]);
 
-  const handleSaveReport = async (slot, report) => {
-    setSyncStatus("saving");
-    try {
-      // Snapshot the class details as they are right now. This is what makes class
-      // changes safe: if the class gets renamed (e.g. "Look 0" → "Look 1") or a
-      // student is moved to a different class later, this saved report keeps
-      // pointing at the class name / level / roster it actually happened under.
-      const enrichedReport = {
-        ...report,
-        snapshot: {
-          className:    slot.className,
-          classType:    slot.classType,
-          level:        slot.level,
-          room:         slot.room,
-          time:         slot.time,
-          studentNames: slot.studentNames,
-        },
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const dates = [];
+
+      // Start from today, go forward 60 days
+      for (let i = 0; i < 60; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+
+        if (d.getDay() !== targetDayIdx) continue;
+
+        const dateStr = toLocalDateString(d);
+
+        // Skip holidays
+        if (holidaysList.indexOf(dateStr) > -1) continue;
+
+        dates.push(new Date(d));
+
+        if (dates.length >= 8) break;
+      }
+
+      if (dates.length === 0) {
+        list.innerHTML = '<div class="empty-state">日付がありません。</div>';
+        return;
+      }
+
+      dates.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'date-card';
+        const dateStr = toLocalDateString(d);
+        div.setAttribute('data-date', dateStr);
+        div.onclick = () => selectDate(dateStr, div);
+
+        const isToday = d.getTime() === today.getTime();
+        const diffDays = Math.round((d - today) / (1000 * 60 * 60 * 24));
+        let distanceLabel = '';
+        if (isToday) distanceLabel = '今日';
+        else if (diffDays === 1) distanceLabel = '明日';
+        else if (diffDays < 7) distanceLabel = diffDays + '日後';
+        else distanceLabel = Math.floor(diffDays / 7) + '週間後';
+
+        div.innerHTML =
+          '<div class="dc-date">' + (d.getMonth()+1) + '月' + d.getDate() + '日（' + DAY_NAMES[d.getDay()] + '）</div>' +
+          '<div class="dc-distance">' + distanceLabel + '</div>';
+
+        list.appendChild(div);
+      });
+    }
+
+    function selectDate(dateStr, el) {
+      selectedDate = dateStr;
+      document.querySelectorAll('.date-card').forEach(d => d.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function toLocalDateString(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
+    }
+
+    function handleReasonChange(select) {
+      select.classList.remove('placeholder');
+      const textarea = document.getElementById('reasonText');
+      if (select.value === 'other') {
+        textarea.classList.remove('hidden');
+        textarea.focus();
+      } else {
+        textarea.classList.add('hidden');
+        textarea.value = '';
+      }
+    }
+
+    function getReasonText() {
+      const sel = document.getElementById('reason');
+      if (sel.value === 'other') {
+        return document.getElementById('reasonText').value.trim() || 'その他';
+      }
+      return sel.value || 'なし';
+    }
+
+    function formatDateJP(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return (d.getMonth() + 1) + '月' + d.getDate() + '日（' + DAY_NAMES[d.getDay()] + '）';
+    }
+
+    function showConfirmation() {
+      if (!selectedDate) {
+        alert('欠席日を選択してください。');
+        return;
+      }
+
+      document.getElementById('confirmStudent').textContent = currentStudent.name;
+      document.getElementById('confirmDate').textContent = formatDateJP(selectedDate);
+      document.getElementById('confirmTime').textContent = currentStudent.regularTime;
+      document.getElementById('confirmReason').textContent = getReasonText();
+
+      showScreen('confirmScreen');
+    }
+
+    function backToForm() {
+      showScreen('formScreen');
+    }
+
+    async function submitAbsence() {
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      btn.textContent = '送信中...';
+
+      const payload = {
+        lineUserId: lineUserId,
+        lineDisplayName: lineDisplayName,
+        studentName: currentStudent.name,
+        absenceDate: selectedDate,
+        classTime: currentStudent.regularTime,
+        regularDay: currentStudent.regularDay,
+        className: currentStudent.className,
+        reason: getReasonText(),
+        submittedAt: new Date().toISOString()
       };
-      await saveReport(date, slot.id, enrichedReport);
-      setDayReports(prev => ({ ...prev, [slot.id]: enrichedReport }));
-      setSyncStatus("saved");
-      setTimeout(() => setSyncStatus(null), 2500);
-    } catch (e) {
-      console.error("Failed to save report:", e);
-      setSyncStatus("error");
-      setTimeout(() => setSyncStatus(null), 4000);
+
+      try {
+        const response = await fetch(CONFIG.WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok || response.status === 200) {
+          showScreen('successScreen');
+        } else {
+          throw new Error('Server responded with ' + response.status);
+        }
+      } catch (err) {
+        console.error('Submit error:', err);
+        showError('送信に失敗しました。電波状況を確認して、もう一度お試しください。');
+      }
     }
-  };
 
-  const handleSaveTemplates = async (templates) => {
-    setSyncStatus("saving");
-    try {
-      await saveTemplates(templates);
-      setWeekTemplates(templates);
-      setSyncStatus("saved");
-      setTimeout(() => setSyncStatus(null), 2500);
-    } catch (e) {
-      console.error("Failed to save templates:", e);
-      setSyncStatus("error");
-      setTimeout(() => setSyncStatus(null), 4000);
+    function closeLiff() {
+      try {
+        if (typeof liff !== 'undefined' && liff.closeWindow) liff.closeWindow();
+      } catch (err) {}
+      try { window.close(); } catch (err) {}
+      setTimeout(function() {
+        document.getElementById('closeMessage').classList.remove('hidden');
+      }, 500);
     }
-  };
 
-  if (appStatus === "loading") {
-    return (
-      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100vh", background:C.bg, gap:16 }}>
-        <style>{css}</style>
-        <div className="spin" style={{ width:32, height:32, border:`3px solid ${C.border}`, borderTopColor:C.forest, borderRadius:"50%" }} />
-        <p style={{ fontFamily:MONO, fontSize:13, color:C.muted, letterSpacing:1 }}>Loading from cloud…</p>
-      </div>
-    );
-  }
+    function showError(msg) {
+      document.getElementById('errorMessage').textContent = msg;
+      showScreen('errorScreen');
+    }
 
-  const dow          = dayName(date);
-  const slots        = (weekTemplates || buildWeekTemplates())[dow] || buildTemplate(dow);
-  const isToday      = date === todayStr();
-  const currentSlots = isToday ? getCurrentSlots(slots) : [];
+    function showScreen(screenId) {
+      ['loading','studentScreen','formScreen','confirmScreen','successScreen','errorScreen'].forEach(s => {
+        document.getElementById(s).classList.add('hidden');
+      });
+      document.getElementById(screenId).classList.remove('hidden');
+    }
 
-  return (
-    <>
-      <style>{css}</style>
-
-      {reportSlot && (
-        <ReportModal
-          slot={reportSlot}
-          existing={dayReports[reportSlot.id]}
-          onSave={r => handleSaveReport(reportSlot, r)}
-          onClose={() => setReportSlot(null)}
-        />
-      )}
-
-      {showTemplate && (
-        <TemplateBuilder
-          weekTemplates={weekTemplates || buildWeekTemplates()}
-          onSave={handleSaveTemplates}
-          onClose={() => setShowTemplate(false)}
-        />
-      )}
-
-      {showAnalytics && (
-        <AnalyticsView
-          weekTemplates={weekTemplates || buildWeekTemplates()}
-          onClose={() => setShowAnalytics(false)}
-        />
-      )}
-
-      <div style={{ maxWidth:940, margin:"0 auto", padding:"28px 16px 56px", minHeight:"100vh" }}>
-
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-          marginBottom:26, flexWrap:"wrap", gap:12,
-          paddingBottom:20, borderBottom:`1.5px solid ${C.border}` }}>
-          <div>
-            <h1 style={{ fontFamily:SERIF, fontSize:28, color:C.forest }}>
-              KANA <span style={{ color:C.amber, fontStyle:"italic" }}>Daily Log</span>
-            </h1>
-            {appStatus === "error" && (
-              <p style={{ fontSize:11, color:C.coral, marginTop:4, fontFamily:MONO }}>
-                ⚠ Could not connect to cloud — check your connection
-              </p>
-            )}
-          </div>
-          <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
-            {syncStatus && <SyncBadge status={syncStatus} />}
-            <DayStats slots={slots} dayReports={dayReports} />
-            <Btn variant="purple" small onClick={() => setShowTemplate(true)}>⚙ Weekly Schedule</Btn>
-            <Btn variant="green"  small onClick={() => setShowAnalytics(true)}>📊 Reports</Btn>
-          </div>
-        </div>
-
-        <div style={{ marginBottom:22 }}>
-          <DateNav date={date} onChange={setDate} />
-        </div>
-
-        {currentSlots.length > 0 && (
-          <div style={{ marginBottom:20, borderRadius:12, overflow:"hidden", border:`2px solid ${C.forest}`, boxShadow:"0 4px 20px rgba(30,58,47,.12)" }}>
-            <div style={{ background:C.forest, padding:"10px 18px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                <div style={{ width:8, height:8, borderRadius:"50%", background:C.green, boxShadow:`0 0 0 3px rgba(13,122,71,.3)`, animation:"pulse 2s ease infinite" }} />
-                <span style={{ fontFamily:MONO, fontSize:11, color:C.amberBg, letterSpacing:2, fontWeight:700 }}>NOW LIVE</span>
-              </div>
-              <span style={{ fontFamily:MONO, fontSize:13, color:C.amberBg, fontWeight:600 }}>{liveTime}</span>
-            </div>
-            <div style={{ background:"#F0F7F3", padding:"12px 18px", display:"flex", gap:10, flexWrap:"wrap" }}>
-              {currentSlots.map(slot => (
-                <button key={slot.id} onClick={() => setReportSlot(slot)} style={{
-                  flex:1, minWidth:180, padding:"10px 16px", borderRadius:9,
-                  background: dayReports[slot.id] ? C.greenBg : C.white,
-                  border:`1.5px solid ${dayReports[slot.id] ? C.green : C.forest}`,
-                  cursor:"pointer", textAlign:"left", transition:"all .15s",
-                }}
-                  onMouseEnter={e => e.currentTarget.style.background = dayReports[slot.id] ? C.greenBg : "#F8F6F1"}
-                  onMouseLeave={e => e.currentTarget.style.background = dayReports[slot.id] ? C.greenBg : C.white}
-                >
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                    <span style={{ fontWeight:700, fontSize:14, color:C.forest }}>{slot.className}</span>
-                    {slot.room && (
-                      <span style={{ fontFamily:MONO, fontSize:10, fontWeight:700,
-                        color: slot.room === "Room A" ? C.purple : C.forestMid,
-                        background: slot.room === "Room A" ? C.purpleBg : C.greenDim,
-                        padding:"1px 7px", borderRadius:99 }}>
-                        {slot.room}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <span style={{ fontSize:12, color:C.textDim }}>{slot.studentNames.length} student{slot.studentNames.length !== 1 ? "s" : ""}</span>
-                    <span style={{ fontSize:12, fontWeight:700, color: dayReports[slot.id] ? C.green : C.forest }}>
-                      {dayReports[slot.id] ? "✓ Logged — tap to edit" : "Tap to log →"}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {isToday && currentSlots.length === 0 && slots.filter(s => s.className).length > 0 && (() => {
-          const times = [...new Set(slots.map(s => s.time))].sort();
-          const now   = nowHHMM();
-          const next  = times.find(t => t > now);
-          if (!next) return null;
-          const nextSlots = slots.filter(s => s.time === next && s.className);
-          if (!nextSlots.length) return null;
-          return (
-            <div style={{ marginBottom:20, borderRadius:10, padding:"10px 16px", background:C.amberBg, border:`1.5px solid ${C.amber}`, display:"flex", alignItems:"center", gap:10 }}>
-              <span style={{ fontSize:13, color:C.amber, fontFamily:MONO, fontWeight:600 }}>⏱ Next class at {next}</span>
-              <span style={{ fontSize:13, color:C.textDim }}>— {nextSlots.map(s => s.className + (s.room ? ` (${s.room})` : "")).join(" · ")}</span>
-            </div>
-          );
-        })()}
-
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:18 }}>
-          <p style={{ fontFamily:MONO, fontSize:11, color:C.purple, letterSpacing:2, textTransform:"uppercase", fontWeight:600 }}>{dow} Schedule</p>
-          {dow === "Saturday" && <span style={{ fontSize:11, color:C.amber, fontWeight:600, fontFamily:MONO }}>09:00 – 17:00</span>}
-          <button onClick={() => setShowTemplate(true)} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:6, padding:"3px 10px", color:C.textDim, fontSize:11, cursor:"pointer" }}>Edit {dow}</button>
-        </div>
-
-        {isDualDay(dow) ? (() => {
-          const times = slotTimesFor(dow);
-          return (
-            <div style={{ display:"grid", gap:14 }}>
-              {times.map(time => {
-                const pair = slots.filter(s => s.time === time);
-                return (
-                  <div key={time}>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                      {pair.map(slot => (
-                        <SlotCard key={slot.id} slot={slot} report={dayReports[slot.id]}
-                          isCurrent={isToday && currentSlots.some(s => s.id === slot.id)}
-                          onLog={() => setReportSlot(slot)}
-                          onEditTemplate={() => setShowTemplate(true)} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })() : (
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(270px, 1fr))", gap:14 }}>
-            {slots.map(slot => (
-              <SlotCard key={slot.id} slot={slot} report={dayReports[slot.id]}
-                isCurrent={isToday && currentSlots.some(s => s.id === slot.id)}
-                onLog={() => setReportSlot(slot)}
-                onEditTemplate={() => setShowTemplate(true)} />
-            ))}
-          </div>
-        )}
-
-        <p style={{ textAlign:"center", color:C.muted, fontSize:11, marginTop:32, fontFamily:MONO, letterSpacing:.5 }}>
-          Synced to cloud · Data shared across all devices
-        </p>
-      </div>
-    </>
-  );
-}
-
-const container = document.getElementById('root');
-const root = ReactDOM.createRoot(container);
-root.render(<App />);
-
-</script>
+    document.addEventListener('DOMContentLoaded', initLiff);
+  </script>
 </body>
 </html>
