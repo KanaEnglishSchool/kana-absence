@@ -400,8 +400,16 @@
   <script>
     const CONFIG = {
       LIFF_ID: '2009843493-wbTFJitn',
+
+      // READS go straight to Apps Script. Make is no longer in the read
+      // path. Must stay a plain GET with no custom headers, otherwise a
+      // CORS preflight fires that Apps Script cannot answer.
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzb3aX4UmvbifSMmRR1NGCuUuDF_AkghJ03jti-V7vO2vK_8UPtDbTPb1tQZu5J288m/exec',
+
+      // WRITES still go to Make, which sends the LINE confirmation and
+      // the staff email after the absence is recorded.
       WEBHOOK_URL: 'https://hook.eu1.make.com/68awyiuq2m5y6tneni64yp7eqlcnm64s',
-      STUDENT_API: 'https://hook.eu1.make.com/5ccwg3jy3wnee5pizu3e6evn0zua6yrb',
+
       API_SECRET: '1234567890123456789012345678901234567890'
     };
 
@@ -428,50 +436,64 @@
       }
     }
 
+    // ── Networking ──────────────────────────────────────────
+    function apiUrl(params) {
+      let url = CONFIG.SCRIPT_URL + '?secret=' + encodeURIComponent(CONFIG.API_SECRET);
+      Object.keys(params).forEach(function(k) {
+        if (params[k] === null || params[k] === undefined || params[k] === '') return;
+        url += '&' + k + '=' + encodeURIComponent(params[k]);
+      });
+      return url;
+    }
+
+    // Retries transient failures so one hiccup doesn't surface to the
+    // parent as "your child wasn't found".
+    async function apiGet(params, attempts) {
+      attempts = attempts || 3;
+      let lastErr = null;
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const res = await fetch(apiUrl(params));
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const text = await res.text();
+          if (text.trim().charAt(0) === '<') throw new Error('non-JSON response');
+          return JSON.parse(text);
+        } catch (e) {
+          lastErr = e;
+          if (i < attempts - 1) {
+            await new Promise(function(r) { setTimeout(r, 1000 * (i + 1)); });
+          }
+        }
+      }
+      throw lastErr;
+    }
+
+    // ONE request replaces the previous two (holidays, then students).
     async function loadStudents() {
       try {
-        // Fetch holidays first
-        try {
-          const holUrl = CONFIG.STUDENT_API + '?mode=holidays&secret=' + encodeURIComponent(CONFIG.API_SECRET);
-          const holRes = await fetch(holUrl);
-          const holData = await holRes.json();
-          holidaysList = holData.holidays || [];
-        } catch (err) {
-          console.error('holidays fetch failed:', err);
-          holidaysList = [];
-        }
+        const data = await apiGet({ mode: 'bootstrap_kids', userId: lineUserId });
 
-        const url = CONFIG.STUDENT_API
-          + '?mode=students&userId=' + encodeURIComponent(lineUserId)
-          + '&secret=' + encodeURIComponent(CONFIG.API_SECRET);
-
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (!data.students || data.students.length === 0) {
-          showError('このLINEアカウントに紐づく生徒が見つかりません。');
+        if (!data.found) {
+          showError(data.message || '生徒情報が見つかりませんでした。');
           return;
         }
 
-        // Filter out adult students
-        studentList = data.students.filter(s => !s.isAdult);
+        holidaysList = data.holidays || [];
+        studentList = data.students || [];
 
         if (studentList.length === 0) {
-          showError('お子様の登録がありません。\n大人レッスンの方は別メニューをご利用ください。');
+          showError('お子様の登録がありません。');
           return;
         }
 
-        // Skip picker if only one student
         if (studentList.length === 1) {
           selectStudent(0);
         } else {
           renderStudentPicker();
           showScreen('studentScreen');
         }
-
       } catch (err) {
-        console.error('Failed to load students:', err);
-        showError('生徒情報の読み込みに失敗しました。');
+        showError('情報の読み込みに失敗しました。電波状況をご確認のうえ、もう一度お試しください。');
       }
     }
 
