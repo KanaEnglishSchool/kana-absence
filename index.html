@@ -382,8 +382,9 @@
   <div id="successScreen" class="form-container hidden">
     <div class="success-screen">
       <div class="success-icon">✅</div>
-      <h2>送信完了</h2>
-      <p>欠席連絡を受け付けました。<br>確認のメッセージをLINEでお送りします。</p>
+      <h2 id="successTitle">送信完了</h2>
+      <p id="successMessage" style="white-space: pre-line;">欠席連絡を受け付けました。
+確認のメッセージをLINEでお送りします。</p>
       <button class="close-btn" onclick="closeLiff()">閉じる</button>
       <p id="closeMessage" class="close-message hidden">画面を下にスワイプして閉じてください。</p>
     </div>
@@ -406,9 +407,9 @@
       // CORS preflight fires that Apps Script cannot answer.
       SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzb3aX4UmvbifSMmRR1NGCuUuDF_AkghJ03jti-V7vO2vK_8UPtDbTPb1tQZu5J288m/exec',
 
-      // WRITES still go to Make, which sends the LINE confirmation and
-      // the staff email after the absence is recorded.
-      WEBHOOK_URL: 'https://hook.eu1.make.com/68awyiuq2m5y6tneni64yp7eqlcnm64s',
+      // WRITES also go straight to Apps Script (mode=absence_submit).
+      // Apps Script records the absence, then sends the LINE message and
+      // the staff email itself. Make is not used by this page.
 
       API_SECRET: '1234567890123456789012345678901234567890'
     };
@@ -667,38 +668,57 @@
       showScreen('formScreen');
     }
 
+    function newRequestId() {
+      return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function showResult(title, message) {
+      document.getElementById('successTitle').textContent = title;
+      document.getElementById('successMessage').textContent = message;
+      showScreen('successScreen');
+    }
+
+    // Success is shown ONLY when Apps Script confirms the absence was
+    // written to 欠席記録.
     async function submitAbsence() {
       const btn = document.getElementById('sendBtn');
       btn.disabled = true;
       btn.textContent = '送信中...';
 
-      const payload = {
-        lineUserId: lineUserId,
-        lineDisplayName: lineDisplayName,
-        studentName: currentStudent.name,
-        absenceDate: selectedDate,
-        classTime: currentStudent.regularTime,
-        regularDay: currentStudent.regularDay,
-        className: currentStudent.className,
-        reason: getReasonText(),
-        submittedAt: new Date().toISOString()
-      };
+      // One id per tap: a retry returns the first answer instead of
+      // recording the absence twice.
+      const requestId = newRequestId();
 
       try {
-        const response = await fetch(CONFIG.WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        const res = await apiGet({
+          mode: 'absence_submit',
+          userId: lineUserId,
+          lineDisplayName: lineDisplayName,
+          studentName: currentStudent.name,
+          absenceDate: selectedDate,
+          classTime: currentStudent.regularTime,
+          className: currentStudent.className,
+          reason: getReasonText(),
+          requestId: requestId
+        }, 3);
 
-        if (response.ok || response.status === 200) {
-          showScreen('successScreen');
-        } else {
-          throw new Error('Server responded with ' + response.status);
+        if (res.ok && res.duplicate) {
+          showResult('受付済み', 'この日の欠席はすでに受け付けています。');
+          return;
         }
+        if (res.ok) {
+          showResult('送信完了',
+            '欠席連絡を受け付けました。\n確認のメッセージをLINEでお送りします。' +
+            (res.expiry ? '\n\n振替の予約は ' + res.expiry + ' まで可能です。' : ''));
+          return;
+        }
+        btn.disabled = false;
+        btn.textContent = 'この内容で送信する';
+        showError(res.message || ('送信できませんでした: ' + (res.error || '不明なエラー')));
       } catch (err) {
-        console.error('Submit error:', err);
-        showError('送信に失敗しました。電波状況を確認して、もう一度お試しください。');
+        btn.disabled = false;
+        btn.textContent = 'この内容で送信する';
+        showError('通信エラーのため、受付を確認できませんでした。\n電波状況をご確認のうえ、もう一度お試しください。');
       }
     }
 
